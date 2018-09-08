@@ -28,11 +28,11 @@ This package exposes the following utilities (see the respective source files fo
   - **`preprocessArgs(rawArgs: string[]): {args: string[], config: {}}`:**<br />
     _Preprocess a list of input arguments into a list of arguments that can be used for
     substituting into commands. Also, derive a configuration object to modify the behavior of
-    `run()`._
+    `commandUtils.run()`._
 
   - **`run(cmd: string, runtimeArgs: string[], config: {}): Promise<string>`:**<br />
     _Run a command. Could be a complex command with `|`, `&&` and `||`. It also supports argument
-    substitution with `expandCmd()`._
+    substitution with `commandUtils.expandCmd()`._
 
   - **`spawnAsPromised(cmd: string, config: {}): Promise<string>`:**<br />
     _Spawn a complex command (or series of piped commands) and return a promise that resolves or
@@ -49,6 +49,20 @@ This package exposes the following utilities (see the respective source files fo
     Calling it with a non-Windows process is a no-op._
     > NOTE: This is still an experimental feature and not guaranteed to work as expected.
     >       It is known to not work with certain types of commands (e.g. `vim`).
+
+- **[testingUtils][lib-testing-utils]:**
+
+  - **`testCmd(cmd: string): Promise<string>`:**<br />
+    _Run the specified command using `commandUtils.spawnAsPromised()`, capture the output and return
+    it (after normalizing newlines and trimming it)._
+
+  - **`testScriptFactory(scriptPath: string): Function`:**<br />
+    _Create a function that can be used for testing a Node.js script with `testingUtils.testCmd()`.
+    Different arguments can be passed per call of the returned function._
+
+  - **`withJasmineTimeout(newTimeout: number, testSuite: Function): void`:**<br />
+    _Run a test suite (i.e. `describe()` block) with a different `DEFAULT_TIMEOUT_INTERVAL`. The
+    previous timeout interval is restored after all tests of the suite have completed._
 
 ### Command-line usage
 
@@ -105,8 +119,6 @@ The following test-types/modes are available:
 
 Things I want to (but won't necessarily) do:
 
-- Expose `testingUtils` (e.g. `normalizeNewlines()`, `stripCleanUpCharacters()`?, `testBinScriptFactory()`, `testCmd()`,
-  `withJasmineTimeout()`).
 - Add more unit tests for `commandUtils.spawnAsPromised()`.
 
 
@@ -118,3 +130,4 @@ Things I want to (but won't necessarily) do:
 [build-status-image]: https://travis-ci.org/gkalpak/cli-utils.svg?branch=master
 [lib-command-utils]: lib/command-utils.js
 [lib-process-utils]: lib/process-utils.js
+[lib-testing-utils]: lib/testing-utils.js
