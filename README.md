@@ -105,6 +105,8 @@ The following test-types/modes are available:
 
 Things I want to (but won't necessarily) do:
 
+- Expose `testingUtils` (e.g. `normalizeNewlines()`, `stripCleanUpCharacters()`?, `testBinScriptFactory()`, `testCmd()`,
+  `withJasmineTimeout()`).
 - Add more unit tests for `commandUtils.spawnAsPromised()`.
 
 
