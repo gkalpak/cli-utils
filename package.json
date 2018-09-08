@@ -1,6 +1,6 @@
 {
   "name": "@gkalpak/cli-utils",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A private collection of utilities for developing cli tools.",
   "keywords": [
     "Private",
