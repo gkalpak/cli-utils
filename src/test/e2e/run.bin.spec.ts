@@ -55,7 +55,7 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
   });
 
   it('should correctly run fallback commands (only if necessary)', async () => {
-    let result = await runCmd('"echo ${*:|exit 1|} \\${2:::echo bar}" foo');
+    let result = await runCmd('"echo ${*:::exit 1} \\${2:::echo bar}" foo');
     expect(result).toBe('foo bar');
 
     result = await runCmd('"echo \\${0:::node -p \\"process.platform\\"}" foo');

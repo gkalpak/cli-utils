@@ -119,11 +119,11 @@ describe('runner', () => {
         expect(expandedCmd2).toBe('foo zero | | ${0*:ooops} | | "nil"');
       });
 
-      it('should allow using "`" in fallback values (as long as not starting and ending with "`")', async () => {
-        cmd = 'foo ${3:t`h`r`e`e} | ${4:```4} | ${5:5````}';
+      it('should allow using starting fallback values with `::` when quoted', async () => {
+        cmd = 'foo ${3:"::three"} | ${4:\'::4\'}';
         const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
 
-        expect(expandedCmd).toBe('foo t`h`r`e`e | ```4 | 5````');
+        expect(expandedCmd).toBe('foo "::three" | \'::4\'');
       });
     });
 
@@ -135,7 +135,7 @@ describe('runner', () => {
           callFake((rawCmd: string) => Promise.resolve(`{{${rawCmd}}}`));
       });
 
-      it('should recognize fallback values wrapped in "|" as commands', async () => {
+      it('should recognize fallback values starting with "::" as commands', async () => {
         cmd = 'foo ${3:::three}';
         const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
 

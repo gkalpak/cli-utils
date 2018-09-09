@@ -77,7 +77,7 @@ This package exposes the following commands (see the respective source files for
   > gkcu-expand-cmd "echo \$1 \${2:bar} \$1" foo
   > #--> echo foo bar foo
   >
-  > gkcu-expand-cmd "echo \${1:Hello}, \${0:`whoami`}!" Hey
+  > gkcu-expand-cmd "echo \${1:Hello}, \${0:::whoami}!" Hey
   > #--> echo Hey, gkalpak!
   > ```
 
@@ -89,7 +89,7 @@ This package exposes the following commands (see the respective source files for
   > gkcu-run "echo \$1 \${2:bar} \$1" foo
   > #--> foo bar foo
   >
-  > gkcu-run "echo \${1:Hello}, \${0:`whoami`}!" Hey
+  > gkcu-run "echo \${1:Hello}, \${0:::whoami}!" Hey
   > #--> Hey, gkalpak!
   > ```
 
