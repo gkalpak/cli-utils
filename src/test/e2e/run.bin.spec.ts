@@ -1,20 +1,14 @@
-'use strict';
+import {join} from 'path';
+import {testingUtils} from '../../lib/testing-utils';
+import {IS_WINDOWS, reversePromise, ROOT_DIR} from '../test-utils';
 
-// Imports
-const {join} = require('path');
-const {testScriptFactory, withJasmineTimeout} = require('../../lib/testing-utils');
-const {reversePromise, ROOT_DIR} = require('../test-utils');
 
-// Constants
-const IS_WIN = (process.platform === 'win32');
-
-// Tests
-describe('bin/run', withJasmineTimeout(30000, () => {
+describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
   const scriptPath = join(ROOT_DIR, 'bin/run');
-  const testScript = testScriptFactory(scriptPath);
-  const unescapeDollars = str => str.replace(/\\\$/g, '$$');
+  const testScript = testingUtils.testScriptFactory(scriptPath);
+  const unescapeDollars = (str: string) => str.replace(/\\\$/g, '$$');
   const runCmd = (argsStr = '') => {
-    if (!IS_WIN) {
+    if (!IS_WINDOWS) {
       // On non-Windows platforms, escape `$` (unless already escaped).
       argsStr = unescapeDollars(argsStr).replace(/\$/g, '\\$$');
     }

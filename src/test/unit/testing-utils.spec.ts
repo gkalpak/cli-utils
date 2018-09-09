@@ -1,17 +1,16 @@
-'use strict';
+import {commandUtils} from '../../lib/command-utils';
+import {testingUtils} from '../../lib/testing-utils';
+import {reversePromise} from '../test-utils';
 
-// Imports
-const commandUtils = require('../../lib/command-utils');
-const testingUtils = require('../../lib/testing-utils');
-const {reversePromise} = require('../test-utils');
 
-// Tests
 describe('testing-utils', () => {
   describe('.testCmd()', () => {
-    const testCmd = testingUtils.testCmd;
+    const testCmd: typeof testingUtils.testCmd = testingUtils.testCmd.bind(testingUtils);
+    let cuSpawnAsPromisedSpy: jasmine.Spy;
 
     beforeEach(() => {
-      spyOn(commandUtils, 'spawnAsPromised').and.callFake(cmd => Promise.resolve(`spawned(${cmd})`));
+      cuSpawnAsPromisedSpy = spyOn(commandUtils, 'spawnAsPromised').and.
+        callFake((cmd: string) => Promise.resolve(`spawned(${cmd})`));
     });
 
     it('should be a function', () => {
@@ -23,16 +22,17 @@ describe('testing-utils', () => {
       const result = await testCmd(cmd);
 
       expect(result).toBe(`spawned(${cmd})`);
-      expect(commandUtils.spawnAsPromised).toHaveBeenCalledWith(cmd, {returnOutput: true});
+      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: true});
     });
 
     it('should reject if `commandUtils.spawnAsPromised()` errors', async () => {
-      commandUtils.spawnAsPromised.and.callFake(() => { throw 'bar'; });
+      // tslint:disable-next-line: no-string-throw
+      cuSpawnAsPromisedSpy.and.callFake(() => { throw 'bar'; });
       const err1 = await reversePromise(testCmd('foo'));
 
       expect(err1).toBe('bar');
 
-      commandUtils.spawnAsPromised.and.callFake(() => Promise.reject('baz'));
+      cuSpawnAsPromisedSpy.and.callFake(() => Promise.reject('baz'));
       const err2 = await reversePromise(testCmd('foo'));
 
       expect(err2).toBe('baz');
@@ -41,7 +41,7 @@ describe('testing-utils', () => {
     it('should strip clean-up characters from the output', async () => {
       const originalOutput = '1 \u001b[0m 2 \u001b[?25h 3 \u001B[?25H 4 \u001B[0M 5';
       const expectedOutput = '1  2  3  4  5';
-      commandUtils.spawnAsPromised.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
@@ -49,7 +49,7 @@ describe('testing-utils', () => {
     it('should normalize newlines to `\n`', async () => {
       const originalOutput = '1\r\n2\n3\r\n4\r5';
       const expectedOutput = '1\n2\n3\n4\n5';
-      commandUtils.spawnAsPromised.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
@@ -57,7 +57,7 @@ describe('testing-utils', () => {
     it('should trim the output', async () => {
       const originalOutput = ' \t\r\n 1 2 3 4 5 \t \r \n ';
       const expectedOutput = '1 2 3 4 5';
-      commandUtils.spawnAsPromised.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
@@ -65,49 +65,50 @@ describe('testing-utils', () => {
     it('should trim the output after stripping clean-up characters', async () => {
       const originalOutput = '  \u001b[0m  \u001b[?25h  1 2 3 4 5  \u001b[?25h  \u001b[0m  ';
       const expectedOutput = '1 2 3 4 5';
-      commandUtils.spawnAsPromised.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
   });
 
   describe('.testScriptFactory()', () => {
-    const testScriptFactory = testingUtils.testScriptFactory;
+    const testScriptFactory: typeof testingUtils.testScriptFactory = testingUtils.testScriptFactory.bind(testingUtils);
 
     it('should be a function', () => {
       expect(testScriptFactory).toEqual(jasmine.any(Function));
     });
 
     it('should return a function', () => {
-      expect(testScriptFactory()).toEqual(jasmine.any(Function));
+      expect(testScriptFactory('')).toEqual(jasmine.any(Function));
     });
 
     describe('returned function', () => {
-      let testScript;
+      let testScript: ReturnType<typeof testScriptFactory>;
+      let tuTestCmdSpy: jasmine.Spy;
 
       beforeEach(() => {
         testScript = testScriptFactory('/foo/bar');
-        spyOn(testingUtils, 'testCmd');
+        tuTestCmdSpy = spyOn(testingUtils, 'testCmd');
       });
 
       it('should call `testCmd()` with an appropriate command', () => {
-        expect(testingUtils.testCmd).not.toHaveBeenCalled();
+        expect(tuTestCmdSpy).not.toHaveBeenCalled();
 
         testScript();
-        expect(testingUtils.testCmd).toHaveBeenCalledWith('node /foo/bar ');
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar ');
       });
 
       it('should support appending arguments per call', () => {
         testScript('--baz qux');
-        expect(testingUtils.testCmd).toHaveBeenCalledWith('node /foo/bar --baz qux');
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar --baz qux');
 
         testScript('42');
-        expect(testingUtils.testCmd).toHaveBeenCalledWith('node /foo/bar 42');
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar 42');
       });
 
       it('should forward the value returned by `testCmd()`', () => {
-        const retValue = {};
-        testingUtils.testCmd.and.returnValue(retValue);
+        const retValue = Promise.resolve('returned');
+        tuTestCmdSpy.and.returnValue(retValue);
 
         expect(testScript()).toBe(retValue);
         expect(testScript('a r g s')).toBe(retValue);
@@ -116,7 +117,8 @@ describe('testing-utils', () => {
   });
 
   describe('.withJasmineTimeout()', () => {
-    const withJasmineTimeout = testingUtils.withJasmineTimeout;
+    const withJasmineTimeout: typeof testingUtils.withJasmineTimeout =
+      testingUtils.withJasmineTimeout.bind(testingUtils);
 
     it('should be a function', () => {
       expect(withJasmineTimeout).toEqual(jasmine.any(Function));
@@ -127,7 +129,7 @@ describe('testing-utils', () => {
     });
 
     it('should return a function', () => {
-      expect(withJasmineTimeout()).toEqual(jasmine.any(Function));
+      expect(withJasmineTimeout(42, () => undefined)).toEqual(jasmine.any(Function));
     });
 
     // Since this function is fairly simple, it is not worth to mock out the Jasmine globals

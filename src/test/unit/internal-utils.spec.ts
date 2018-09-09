@@ -1,14 +1,13 @@
-'use strict';
+import chalk from 'chalk';
+import {internalUtils} from '../../lib/internal-utils';
+import {reversePromise, tickAsPromised} from '../test-utils';
 
-// Imports
-const chalk = require('chalk');
-const {finallyAsPromised, noop, onError} = require('../../lib/internal-utils');
-const {reversePromise, tickAsPromised} = require('../test-utils');
 
-// Tests
 describe('internal-utils', () => {
   describe('.finallyAsPromised()', () => {
-    let callback;
+    const finallyAsPromised: typeof internalUtils.finallyAsPromised =
+      internalUtils.finallyAsPromised.bind(internalUtils);
+    let callback: jasmine.Spy;
 
     beforeEach(() => callback = jasmine.createSpy('callback'));
 
@@ -17,7 +16,7 @@ describe('internal-utils', () => {
     });
 
     it('should return a promise', () => {
-      expect(finallyAsPromised(new Promise(noop), noop)).toEqual(jasmine.any(Promise));
+      expect(finallyAsPromised(new Promise(internalUtils.noop), internalUtils.noop)).toEqual(jasmine.any(Promise));
     });
 
     describe('when the original promise is resolved', () => {
@@ -60,7 +59,7 @@ describe('internal-utils', () => {
 
       it('should reject with the value thrown by callback', async () => {
         const promise = Promise.resolve('foo');
-        callback.and.callFake(() => { throw 'bar'; });
+        callback.and.callFake(() => { throw 'bar'; });  // tslint:disable-line: no-string-throw
 
         const err = await reversePromise(finallyAsPromised(promise, callback));
 
@@ -101,7 +100,7 @@ describe('internal-utils', () => {
         const promise = Promise.reject('foo');
         callback.and.returnValue('bar');
 
-        const err  =await reversePromise(finallyAsPromised(promise, callback));
+        const err = await reversePromise(finallyAsPromised(promise, callback));
 
         expect(err).toBe('foo');
       });
@@ -117,7 +116,7 @@ describe('internal-utils', () => {
 
       it('should reject with the value thrown by callback', async () => {
         const promise = Promise.reject('foo');
-        callback.and.callFake(() => { throw 'bar'; });
+        callback.and.callFake(() => { throw 'bar'; });  // tslint:disable-line: no-string-throw
 
         const err = await reversePromise(finallyAsPromised(promise, callback));
 
@@ -136,6 +135,8 @@ describe('internal-utils', () => {
   });
 
   describe('.noop()', () => {
+    const noop: typeof internalUtils.noop = internalUtils.noop.bind(internalUtils);
+
     it('should be a function', () => {
       expect(noop).toEqual(jasmine.any(Function));
     });
@@ -147,9 +148,13 @@ describe('internal-utils', () => {
   });
 
   describe('.onError()', () => {
+    const onError: typeof internalUtils.onError = internalUtils.onError.bind(internalUtils);
+    let consoleErrorSpy: jasmine.Spy;
+    let processExitSpy: jasmine.Spy;
+
     beforeEach(() => {
-      spyOn(console, 'error');
-      spyOn(process, 'exit');
+      consoleErrorSpy = spyOn(console, 'error');
+      processExitSpy = spyOn(process, 'exit');
     });
 
     it('should be a function', () => {
@@ -158,43 +163,43 @@ describe('internal-utils', () => {
 
     it('should log the error (in red)', () => {
       onError('foo');
-      expect(console.error).toHaveBeenCalledWith(chalk.red('Error: foo'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Error: foo'));
     });
 
     it('should log the error as exit code if a (non-zero) number', () => {
       onError(42);
-      expect(console.error).toHaveBeenCalledWith(chalk.red('Exit code: 42'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Exit code: 42'));
 
-      console.error.calls.reset();
+      consoleErrorSpy.calls.reset();
 
       onError('42');
-      expect(console.error).toHaveBeenCalledWith(chalk.red('Error: 42'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Error: 42'));
 
-      console.error.calls.reset();
+      consoleErrorSpy.calls.reset();
 
       onError(0);
-      expect(console.error).toHaveBeenCalledWith(chalk.red('Error: 0'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Error: 0'));
     });
 
     it('should log the error\'s stacktrace (in red) if an `Error`', () => {
       onError(Object.assign(new Error('bar'), {stack: 'bar'}));
-      expect(console.error).toHaveBeenCalledWith(chalk.red('bar'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('bar'));
     });
 
     it('should exit the process with 1', () => {
       onError('foo');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(processExitSpy).toHaveBeenCalledWith(1);
     });
 
     it('should exit the process with `error` if a (non-zero) number', () => {
       onError(42);
-      expect(process.exit).toHaveBeenCalledWith(42);
+      expect(processExitSpy).toHaveBeenCalledWith(42);
 
       onError('42');
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(processExitSpy).toHaveBeenCalledWith(1);
 
       onError(0);
-      expect(process.exit).toHaveBeenCalledWith(1);
+      expect(processExitSpy).toHaveBeenCalledWith(1);
     });
   });
 });

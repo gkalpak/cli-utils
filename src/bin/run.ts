@@ -1,14 +1,15 @@
 #!/usr/bin/env node
-'use strict';
+import {commandUtils} from '../lib/command-utils';
+import {internalUtils} from '../lib/internal-utils';
+
 
 /**
- * @description
  * Run a command with support for argument substitution. Could be a complex command with `|`, `&&` and `||` (but not
  * guaranteed to work if too complex :P).
  *
  * The first argument is the command to be run (after substitution). The rest of the arguments are passed to
- * {@link commandUtils#preprocessArgs preprocessArgs()} (to separate actual arguments from configuration arguments) and
- * the result is run using {@link commandUtils#run run()}, which calls {@link commandUtils#expandCmd expandCmd()} under
+ * {@link CommandUtils#preprocessArgs preprocessArgs()} (to separate actual arguments from configuration arguments) and
+ * the result is run using {@link CommandUtils#run run()}, which calls {@link CommandUtils#expandCmd expandCmd()} under
  * the hood.
  *
  * @example
@@ -37,18 +38,17 @@
  * #--> Hey, gkalpak!
  * ```
  *
- * @param {string} cmd - The command to run (after substitution).
- * @param {string[]} rawArgs - The arguments, including both runtime arguments (that will be used for substituting) and
+ * @param cmd - The command to run (after substitution).
+ * @param ...rawArgs - The arguments, including both runtime arguments (that will be used for substituting) and
  *     configuration arguments.
  *
- * @return {string} - The output of the command (and any sub-commands that were run during argument substitution).
+ * @return The output of the command (and any sub-commands that were run during argument substitution).
  */
 if (require.main === module) {
-  const {preprocessArgs, run} = require('../lib/command-utils');
-  const {onError} = require('../lib/internal-utils');
-
   const [cmd, ...rawArgs] = process.argv.slice(2);
-  const {args, config} = preprocessArgs(rawArgs);
+  const {args, config} = commandUtils.preprocessArgs(rawArgs);
 
-  run(cmd, args, config).catch(onError);
+  commandUtils.
+    run(cmd, args, config).
+    catch(internalUtils.onError.bind(internalUtils));
 }

@@ -1,0 +1,6 @@
+/out/test/
+/scripts/
+/src/test/
+
+/.*
+*.log
