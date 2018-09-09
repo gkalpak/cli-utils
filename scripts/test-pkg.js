@@ -4,8 +4,8 @@
 // Imports
 const {green, red} = require('chalk');
 const {existsSync} = require('fs');
-const {join, resolve} = require('path');
-const {bin, main} = require('../package.json');
+const {resolve} = require('path');
+const {bin, main, types, typings} = require('../package.json');
 
 // Constants
 const CHECK_MARK = green('\u2714');
@@ -18,32 +18,31 @@ _main();
 // Function - Definitions
 function _main() {
   checkBin(bin || {}, ROOT_DIR);
-  checkMain(main || '', ROOT_DIR);
+  checkFile('main', main || '', ROOT_DIR);
+  checkFile('types', types || '', ROOT_DIR);
+  checkFile('typings', typings || '', ROOT_DIR);
 }
 
 function checkBin(bin, rootDir) {
   const missingScripts = Object.keys(bin).
-    map(key => join(rootDir, bin[key])).
+    map(key => resolve(rootDir, bin[key])).
     filter(path => !existsSync(path));
 
   reportResults(
-    'All scripts mentioned in the `bin` property in `./package.json` exist.',
-    'Some scripts mentioned in the `bin` property in `./package.json` are missing.',
-    {'Missing scripts': missingScripts},
-  );
+    'All scripts mentioned in `package.json > bin` exist.',
+    'Some scripts mentioned in `package.json > bin` are missing.',
+    {'Missing scripts': missingScripts});
 }
 
-function checkMain(main, rootDir) {
-  if (!main) return;
+function checkFile(propName, filePath, rootDir) {
+  if (!filePath) return;
 
-  const absMainPath = join(rootDir, main);
-  const missingMain = !existsSync(absMainPath) && !existsSync(`${absMainPath}.js`);
+  const missingFile = !existsSync(resolve(rootDir, filePath));
 
   reportResults(
-    'The script mentioned in the `main` property in `./package.json` exist.',
-    'The script mentioned in the `main` property in `./package.json` is missing.',
-    {'Missing script': missingMain ? [main] : []},
-  );
+    `The file mentioned in \`package.json > ${propName}\` exists.`,
+    `The file mentioned in \`package.json > ${propName}\` is missing.`,
+    {'Missing script': missingFile ? [filePath] : []});
 }
 
 function reportResults(successMessage, errorMessage, errors) {

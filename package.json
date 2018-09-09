@@ -6,7 +6,8 @@
     "Private",
     "Utility"
   ],
-  "main": "out/lib/index",
+  "main": "out/lib/index.js",
+  "typings": "out/lib/index.d.ts",
   "scripts": {
     "prebuild": "npm run clean-out",
     "build": "npm run ~~build",
