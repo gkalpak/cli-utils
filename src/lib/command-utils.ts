@@ -172,8 +172,8 @@ export class CommandUtils {
    *
    * @param cmd - The command to run. Could be a complex command with `|`, `&&` and `||` (but not guaranteed to work if
    *     too complex :P).
-   * @param runtimeArgs - The runtime arguments that will be used for substituting.
-   * @param config - A configuration object. See {@link command-utils/IRunConfig} for more details.
+   * @param runtimeArgs? - The runtime arguments that will be used for substituting.
+   * @param config? - A configuration object. See {@link command-utils/IRunConfig} for more details.
    *
    * @return A promise that resolves once the command has been executed. The resolved value is either an empty string or
    *     (some part of) the output of the command (if `returnOutput` is set and not false).
@@ -200,12 +200,12 @@ export class CommandUtils {
    * - Supports all {@link command-utils/IRunConfig} options.
    *
    * @param cmd - The command to run. Could be a complex command with `|`.
-   * @param config - A configuration object. See {@link command-utils/IRunConfig} for more details.
+   * @param config? - A configuration object. See {@link command-utils/IRunConfig} for more details.
    *
    * @return A promise that resolves once the command has been executed. The resolved value is either an empty string or
    *     (some part of) the output of the command (if `returnOutput` is set and not false).
    */
-  public spawnAsPromised(rawCmd: string, {debug, dryrun, returnOutput, suppressTbj}: IRunConfig): Promise<string> {
+  public spawnAsPromised(rawCmd: string, {debug, dryrun, returnOutput, suppressTbj}: IRunConfig = {}): Promise<string> {
     const returnOutputSubset = (typeof returnOutput === 'number');
 
     const cleanUp = () => {

@@ -30,11 +30,11 @@ This package exposes the following utilities (see the respective source files fo
     substituting into commands. Also, derive a configuration object to modify the behavior of
     `commandUtils.run()`._
 
-  - **`run(cmd: string, runtimeArgs: string[], config: {}): Promise<string>`:**<br />
+  - **`run(cmd: string, runtimeArgs?: string[], config?: {}): Promise<string>`:**<br />
     _Run a command. Could be a complex command with `|`, `&&` and `||`. It also supports argument
     substitution with `commandUtils.expandCmd()`._
 
-  - **`spawnAsPromised(cmd: string, config: {}): Promise<string>`:**<br />
+  - **`spawnAsPromised(cmd: string, config?: {}): Promise<string>`:**<br />
     _Spawn a complex command (or series of piped commands) and return a promise that resolves or
     rejects based on the command's outcome. It provides some extras on top of
     `child_process.spawn()`._

@@ -462,6 +462,11 @@ describe('runner', () => {
       expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
     });
 
+    it('should default to `{}` for `config`', async () => {
+      await spawnAsPromised(rawCmd);
+      expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
+    });
+
     it('should parse the specified command (respecting double-quoted values)', async () => {
       await spawnAsPromised('foo1     "bar1" --baz1 --qux1="foo bar" "baz qux 1"', config);
 
