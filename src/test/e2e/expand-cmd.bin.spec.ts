@@ -67,14 +67,14 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
     expect(result).toBeGreaterThan(0);  // Linux always exits with 2.
   });
 
-  it('should support `--gkcu-` arguments', async () => {
+  it('should support `--gkcu-` arguments (sapVersion: 1)', async () => {
     // debug
     let result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
     expect(result).toBe(
       '[debug] Input command: \'echo baz\'\n' +
       '[debug] Expanded command: \'echo baz\'\n' +
       '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
-      '[debug]     (stdio: inherit, pipe, inherit)\n' +
+      '[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)\n' +
       'echo foo bar baz');
 
     // dryrun
@@ -84,6 +84,26 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
     // returnOutput=n in sub-command
     const subCmd = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
     result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd}}" foo`);
+    expect(result).toBe('blah\nblah\nbaz\necho foo bar blah\nbaz');
+  });
+
+  it('should support `--gkcu-` arguments (sapVersion: 2)', async () => {
+    // debug
+    let result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug --gkcu-sapVersion=2');
+    expect(result).toBe(
+      '[debug] Input command: \'echo baz\'\n' +
+      '[debug] Expanded command: \'echo baz\'\n' +
+      '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
+      '[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)\n' +
+      'echo foo bar baz');
+
+    // dryrun
+    result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-sapVersion=2 --gkcu-dryrun foo');
+    expect(result).toBe('echo foo bar {{echo_baz}}');
+
+    // returnOutput=n in sub-command
+    const subCmd = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
+    result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd}}" foo --gkcu-sapVersion=2`);
     expect(result).toBe('blah\nblah\nbaz\necho foo bar blah\nbaz');
   });
 }));

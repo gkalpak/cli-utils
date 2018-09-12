@@ -30,6 +30,15 @@ export interface IRunConfig {
   returnOutput?: boolean | number;
 
   /**
+   * The version of `spawnAsPromised` to use.
+   * - `1`: The original version. Stable, but does not support some complex command constructs (e.g. pipes inside
+   *   parenthesized expressions).
+   * - `2`: A newer, experimental version. Supports more complex command constructs, but is less stable at the moment.
+   * (Default: 1)
+   */
+  sapVersion?: number;
+
+  /**
    * If true, suppress the "Terminate batch job (Y/N)?" confirmation on Windows.
    * (Default: false)
    *
@@ -205,7 +214,10 @@ export class CommandUtils {
    * @return A promise that resolves once the command has been executed. The resolved value is either an empty string or
    *     (some part of) the output of the command (if `returnOutput` is set and not false).
    */
-  public spawnAsPromised(rawCmd: string, {debug, dryrun, returnOutput, suppressTbj}: IRunConfig = {}): Promise<string> {
+  public spawnAsPromised(
+    rawCmd: string,
+    {debug, dryrun, returnOutput, sapVersion = 1, suppressTbj}: IRunConfig = {},
+  ): Promise<string> {
     const returnOutputSubset = (typeof returnOutput === 'number');
 
     const cleanUp = () => {
@@ -240,9 +252,7 @@ export class CommandUtils {
         () => data :
         () => data.trim().split('\n').slice(-(returnOutput as number)).join('\n');
 
-      const pipedCmdSpecs = rawCmd.
-        split(/\s+\|\s+/).
-        map(cmd => this.parseSingleCmd(cmd, dryrun));
+      const pipedCmdSpecs = this.parseRawCmd(rawCmd, sapVersion, dryrun);
 
       const lastStdout = pipedCmdSpecs.reduce<Readable | null>((prevStdout, cmdSpec, idx, arr) => {
         const isLast = (idx === arr.length - 1);
@@ -262,7 +272,7 @@ export class CommandUtils {
         if (debug) {
           this.debugMessage(
             `  Running ${idx + 1}/${arr.length}: '${executable}', '${args.join(', ')}'\n` +
-            `    (stdio: ${(options.stdio as string[]).join(', ')})`);
+            `    (sapVersion: ${sapVersion}, stdio: ${(options.stdio as string[]).join(', ')})`);
         }
 
         const proc = spawn(executable, args, options).
@@ -316,6 +326,22 @@ export class CommandUtils {
     }
 
     items.splice(idx, 0, newItem);
+  }
+
+  private parseRawCmd(rawCmd: string, sapVersion: number, dryrun = false): Array<{executable: string, args: string[]}> {
+    switch (sapVersion) {
+      case 1:
+        // Traditional (v1) parsing.
+        return rawCmd.
+          split(/\s+\|\s+/).
+          map(cmd => this.parseSingleCmd(cmd, dryrun));
+      case 2:
+        // Since it will be executed in a shell, there is no need to handle anything specially. (Or is it?)
+        const executable = !dryrun ? rawCmd : `node --print '${JSON.stringify(rawCmd).replace(/'/g, '\\\'')}'`;
+        return [{executable, args: []}];
+      default:
+        throw new Error(`Unknown 'sapVersion' (${sapVersion}).`);
+    }
   }
 
   private parseSingleCmd(cmd: string, dryrun = false): {executable: string, args: string[]} {

@@ -418,12 +418,28 @@ describe('runner', () => {
         stdin: {},
         stdout: {pipe: jsmn.createSpy('mockProcess.stdout.pipe')},
       }) as childProcess.ChildProcess;
+    const expectNotToHaveCleanedUp = () => {
+      expect(cancelCleanUpSpy).not.toHaveBeenCalled();
+      expect(unsuppressTbjSpy).not.toHaveBeenCalled();
+    };
+    const expectToHaveCleanedUp = (times = 1) => {
+      // TODO(gkalpak): Verify that besides cancelling automatic clean-up, it does indeed clean up.
+      expect(cancelCleanUpSpy).toHaveBeenCalledTimes(times);
+      expect(unsuppressTbjSpy).toHaveBeenCalledTimes(times);
+
+      cancelCleanUpSpy.calls.reset();
+      unsuppressTbjSpy.calls.reset();
+    };
     let spawned: childProcess.ChildProcess[];
     let autoExitSpawned: boolean;
     let anyObj: jasmine.Any;
     let rawCmd: string;
     let config: IRunConfig;
     let cpSpawnSpy: jasmine.Spy;
+    let puDoOnExitSpy: jasmine.Spy;
+    let cancelCleanUpSpy: jasmine.Spy;
+    let unsuppressTbjSpy: jasmine.Spy;
+
 
     beforeEach(() => {
       let spawnedIndex = -1;
@@ -441,6 +457,11 @@ describe('runner', () => {
         return proc;
       });
 
+      cancelCleanUpSpy = jasmine.createSpy('cancelCleanUp');
+      unsuppressTbjSpy = spyOn(internalUtils, 'noop');
+
+      puDoOnExitSpy = spyOn(processUtils, 'doOnExit').and.returnValue(cancelCleanUpSpy);
+
       autoExitSpawned = true;
       anyObj = jasmine.any(Object);
       rawCmd = 'foo --bar';
@@ -451,202 +472,268 @@ describe('runner', () => {
       expect(spawnAsPromised).toEqual(jasmine.any(Function));
     });
 
-    it('should return a promise', async () => {
-      const promise = spawnAsPromised(rawCmd, config);
-      expect(promise).toEqual(jasmine.any(Promise));
-
-      await promise;
+    it('should have default value for `config`', async () => {
+      await spawnAsPromised(rawCmd);
+      expect(cpSpawnSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('should spawn a process for the specified command', async () => {
-      await spawnAsPromised(rawCmd, config);
-      expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
-    });
-
-    it('should default to `{}` for `config`', async () => {
+    it('should default to `sapVersion: 1`', async () => {
       await spawnAsPromised(rawCmd);
       expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
-    });
-
-    it('should parse the specified command (respecting double-quoted values)', async () => {
-      await spawnAsPromised('foo1     "bar1" --baz1 --qux1="foo bar" "baz qux 1"', config);
-
-      const parsedArgs1 = ['"bar1"', '--baz1', '--qux1="foo bar"', '"baz qux 1"'];
-      expect(cpSpawnSpy).toHaveBeenCalledWith('foo1', parsedArgs1, anyObj);
-
-      await spawnAsPromised('"foo2"     "bar2" --baz2 --qux2="foo bar" "baz qux 2"', config);
-
-      const parsedArgs2 = ['"bar2"', '--baz2', '--qux2="foo bar"', '"baz qux 2"'];
-      expect(cpSpawnSpy).toHaveBeenCalledWith('"foo2"', parsedArgs2, anyObj);
-    });
-
-    it('should support command "piping" (and spawn a process for each command)', async () => {
-      await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', config);
-
-      expect(cpSpawnSpy).toHaveBeenCalledTimes(4);
-
-      expect(cpSpawnSpy.calls.argsFor(0)).toEqual(['foo', ['bar'], anyObj]);
-      expect(cpSpawnSpy.calls.argsFor(1)).toEqual(['bar', ['"baz"'], anyObj]);
-      expect(cpSpawnSpy.calls.argsFor(2)).toEqual(['"baz"', ['qux'], anyObj]);
-      expect(cpSpawnSpy.calls.argsFor(3)).toEqual(['qux', ['"q u u x"'], anyObj]);
-
-      expect((spawned[0].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[1].stdin);
-      expect((spawned[1].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[2].stdin);
-      expect((spawned[2].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[3].stdin);
-    });
-
-    it('should use appropriate values for `stdio`', async () => {
-      await spawnAsPromised(rawCmd, config);
-
-      const expectedStdio1 = ['inherit', 'inherit', 'inherit'];
-      expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio1);
-
-      cpSpawnSpy.calls.reset();
-
-      await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', config);
-
-      const expectedStdio2 = [
-        ['inherit', 'pipe', 'inherit'],
-        ['pipe', 'pipe', 'inherit'],
-        ['pipe', 'pipe', 'inherit'],
-        ['pipe', 'inherit', 'inherit'],
-      ];
-      expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio2[0]);
-      expect(cpSpawnSpy.calls.argsFor(1)[2].stdio).toEqual(expectedStdio2[1]);
-      expect(cpSpawnSpy.calls.argsFor(2)[2].stdio).toEqual(expectedStdio2[2]);
-      expect(cpSpawnSpy.calls.argsFor(3)[2].stdio).toEqual(expectedStdio2[3]);
-    });
-
-    it('should register a clean-up callback', async () => {
-      const doOnExitSpy = spyOn(processUtils, 'doOnExit').and.callThrough();
-      await spawnAsPromised(rawCmd, config);
-
-      expect(doOnExitSpy).toHaveBeenCalledWith(process, jasmine.any(Function));
-    });
-
-    it('should suppress "Terminate batch job (Y/N)?" confirmation on Windows with `suppressTbj: true`', async () => {
-      const suppressTbjConfirmationSpy = spyOn(processUtils, 'suppressTerminateBatchJobConfirmation').and.callThrough();
-
-      await spawnAsPromised(rawCmd, config);
-      expect(suppressTbjConfirmationSpy).not.toHaveBeenCalled();
 
       await spawnAsPromised(rawCmd, {suppressTbj: false});
-      expect(suppressTbjConfirmationSpy).not.toHaveBeenCalled();
+      expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
 
-      await spawnAsPromised(rawCmd, {suppressTbj: true});
-      expect(suppressTbjConfirmationSpy).toHaveBeenCalledWith(process);
+      await spawnAsPromised(rawCmd, {sapVersion: 1});
+      expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
+
+      await spawnAsPromised(rawCmd, {sapVersion: 2});
+      expect(cpSpawnSpy).toHaveBeenCalledWith('foo --bar', [], anyObj);
     });
 
-    describe('returned promise', () => {
-      const expectNotToHaveCleanedUp = () => {
-        expect(cancelCleanUpSpy).not.toHaveBeenCalled();
-        expect(unsuppressTbjSpy).not.toHaveBeenCalled();
-      };
-      const expectToHaveCleanedUp = (times = 1) => {
-        // TODO(gkalpak): Verify that besides cancelling automatic clean-up, it does indeed clean up.
-        expect(cancelCleanUpSpy).toHaveBeenCalledTimes(times);
-        expect(unsuppressTbjSpy).toHaveBeenCalledTimes(times);
+    // With all `sapVersion`:
+    [1, 2].forEach(sapVersion => describe(`v${sapVersion}`, () => {
+      beforeEach(() => config.sapVersion = sapVersion);
 
-        cancelCleanUpSpy.calls.reset();
-        unsuppressTbjSpy.calls.reset();
-      };
-      let cancelCleanUpSpy: jasmine.Spy;
-      let unsuppressTbjSpy: jasmine.Spy;
+      it('should return a promise', async () => {
+        const promise = spawnAsPromised(rawCmd, config);
+        expect(promise).toEqual(jasmine.any(Promise));
 
-      beforeEach(() => {
-        cancelCleanUpSpy = jasmine.createSpy('cancelCleanUp');
-        unsuppressTbjSpy = spyOn(internalUtils, 'noop');
-
-        spyOn(processUtils, 'doOnExit').and.returnValue(cancelCleanUpSpy);
-
-        autoExitSpawned = false;
+        await promise;
       });
 
-      it('should be rejected if a spawned process exits with error (single command)', async () => {
-        const promise = reversePromise(spawnAsPromised(rawCmd, config));
-        spawned[0].emit('exit', 1);
-
-        expect(await promise).toBe(1);
-        expectToHaveCleanedUp();
+      it('should register a clean-up callback', async () => {
+        await spawnAsPromised(rawCmd, config);
+        expect(puDoOnExitSpy).toHaveBeenCalledWith(process, jasmine.any(Function));
       });
 
-      it('should be rejected if a spawned process errors (single command)', async () => {
-        const promise = reversePromise(spawnAsPromised(rawCmd, config));
-        spawned[0].emit('error', 'Test');
+      it('should suppress "Terminate batch job (Y/N)?" confirmation on Windows with `suppressTbj: true`', async () => {
+        const suppressTbjSpy = spyOn(processUtils, 'suppressTerminateBatchJobConfirmation').and.callThrough();
 
-        expect(await promise).toBe('Test');
-        expectToHaveCleanedUp();
+        await spawnAsPromised(rawCmd, config);
+        expect(suppressTbjSpy).not.toHaveBeenCalled();
+
+        await spawnAsPromised(rawCmd, {...config, suppressTbj: false});
+        expect(suppressTbjSpy).not.toHaveBeenCalled();
+
+        await spawnAsPromised(rawCmd, {...config, suppressTbj: true});
+        expect(suppressTbjSpy).toHaveBeenCalledWith(process);
       });
 
-      it('should be rejected if a spawned process exits with error (piped command)', async () => {
-        const promise = Promise.all([
-          reversePromise(spawnAsPromised('foo | bar | baz', config)),
-          reversePromise(spawnAsPromised('foo | bar | baz', config)),
-          reversePromise(spawnAsPromised('foo | bar | baz', config)),
-        ]);
+      describe('returned promise', () => {
+        beforeEach(() => autoExitSpawned = false);
 
-        spawned[0].emit('exit', 1);
-        spawned[4].emit('exit', 2);
-        spawned[8].emit('exit', null, 'SIGNAL');
+        it('should be rejected if a spawned process exits with error (single command)', async () => {
+          const promise = reversePromise(spawnAsPromised(rawCmd, config));
+          spawned[0].emit('exit', 1);
 
-        expect(await promise).toEqual([1, 2, 'SIGNAL']);
-        expectToHaveCleanedUp(3);
+          expect(await promise).toBe(1);
+          expectToHaveCleanedUp();
+        });
+
+        it('should be rejected if a spawned process errors (single command)', async () => {
+          const promise = reversePromise(spawnAsPromised(rawCmd, config));
+          spawned[0].emit('error', 'Test');
+
+          expect(await promise).toBe('Test');
+          expectToHaveCleanedUp();
+        });
+
+        it('should be resolved when all spawned processes complete (single command)', async () => {
+          const resolved = jasmine.createSpy('resolved');
+
+          spawnAsPromised(rawCmd, config).then(resolved);
+
+          // The promise's success handlers are executed asynchronously.
+          await tickAsPromised();
+          expect(resolved).not.toHaveBeenCalled();
+          expectNotToHaveCleanedUp();
+
+          spawned[0].emit('exit', 0);
+          expect(resolved).not.toHaveBeenCalled();
+          expectNotToHaveCleanedUp();
+
+          await tickAsPromised();
+          expect(resolved).toHaveBeenCalledWith('');
+          expectToHaveCleanedUp();
+        });
+      });
+    }));
+
+    // With `sapVersion: 1`:
+    describe(`v1`, () => {
+      beforeEach(() => config.sapVersion = 1);
+
+      it('should spawn a process for the specified command', async () => {
+        await spawnAsPromised(rawCmd, config);
+        expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
       });
 
-      it('should be rejected if a spawned process errors (piped command)', async () => {
-        const promise = Promise.all([
-          reversePromise(spawnAsPromised('foo | bar | baz', config)),
-          reversePromise(spawnAsPromised('foo | bar | baz', config)),
-          reversePromise(spawnAsPromised('foo | bar | baz', config)),
-        ]);
+      it('should parse the specified command (respecting double-quoted values)', async () => {
+        await spawnAsPromised('foo1     "bar1" --baz1 --qux1="foo bar" "baz qux 1"', config);
 
-        spawned[0].emit('error', 'Test0');
-        spawned[4].emit('error', 'Test1');
-        spawned[8].emit('error', 'Test2');
+        const parsedArgs1 = ['"bar1"', '--baz1', '--qux1="foo bar"', '"baz qux 1"'];
+        expect(cpSpawnSpy).toHaveBeenCalledWith('foo1', parsedArgs1, anyObj);
 
-        expect(await promise).toEqual(['Test0', 'Test1', 'Test2']);
-        expectToHaveCleanedUp(3);
+        await spawnAsPromised('"foo2"     "bar2" --baz2 --qux2="foo bar" "baz qux 2"', config);
+
+        const parsedArgs2 = ['"bar2"', '--baz2', '--qux2="foo bar"', '"baz qux 2"'];
+        expect(cpSpawnSpy).toHaveBeenCalledWith('"foo2"', parsedArgs2, anyObj);
       });
 
-      it('should be resolved when all spawned processes complete (single command)', async () => {
-        const resolved = jasmine.createSpy('resolved');
+      it('should support command "piping" (and spawn a process for each command)', async () => {
+        await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', config);
 
-        spawnAsPromised(rawCmd, config).then(resolved);
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(4);
 
-        // The promise's success handlers are executed asynchronously.
-        await tickAsPromised();
-        expect(resolved).not.toHaveBeenCalled();
-        expectNotToHaveCleanedUp();
+        expect(cpSpawnSpy.calls.argsFor(0)).toEqual(['foo', ['bar'], anyObj]);
+        expect(cpSpawnSpy.calls.argsFor(1)).toEqual(['bar', ['"baz"'], anyObj]);
+        expect(cpSpawnSpy.calls.argsFor(2)).toEqual(['"baz"', ['qux'], anyObj]);
+        expect(cpSpawnSpy.calls.argsFor(3)).toEqual(['qux', ['"q u u x"'], anyObj]);
 
-        spawned[0].emit('exit', 0);
-        expect(resolved).not.toHaveBeenCalled();
-        expectNotToHaveCleanedUp();
-
-        await tickAsPromised();
-        expect(resolved).toHaveBeenCalledWith('');
-        expectToHaveCleanedUp();
+        expect((spawned[0].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[1].stdin);
+        expect((spawned[1].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[2].stdin);
+        expect((spawned[2].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[3].stdin);
       });
 
-      it('should be resolved when all spawned processes complete (piped commands)', async () => {
-        const resolved = jasmine.createSpy('resolved');
+      it('should use appropriate values for `stdio`', async () => {
+        await spawnAsPromised(rawCmd, config);
 
-        spawnAsPromised('foo | bar | baz', config).then(resolved);
+        const expectedStdio1 = ['inherit', 'inherit', 'inherit'];
+        expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio1);
 
-        // The promise's success handlers are executed asynchronously.
-        await tickAsPromised();
-        spawned[0].emit('exit', 0);
-        spawned[1].emit('exit', 0);
-        expect(resolved).not.toHaveBeenCalled();
-        expectNotToHaveCleanedUp();
+        cpSpawnSpy.calls.reset();
 
-        await tickAsPromised();
-        spawned[2].emit('exit', 0);
-        expect(resolved).not.toHaveBeenCalled();
-        expectNotToHaveCleanedUp();
+        await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', config);
 
-        await tickAsPromised();
-        expect(resolved).toHaveBeenCalledWith('');
-        expectToHaveCleanedUp();
+        const expectedStdio2 = [
+          ['inherit', 'pipe', 'inherit'],
+          ['pipe', 'pipe', 'inherit'],
+          ['pipe', 'pipe', 'inherit'],
+          ['pipe', 'inherit', 'inherit'],
+        ];
+        expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio2[0]);
+        expect(cpSpawnSpy.calls.argsFor(1)[2].stdio).toEqual(expectedStdio2[1]);
+        expect(cpSpawnSpy.calls.argsFor(2)[2].stdio).toEqual(expectedStdio2[2]);
+        expect(cpSpawnSpy.calls.argsFor(3)[2].stdio).toEqual(expectedStdio2[3]);
+      });
+
+      describe('returned promise', () => {
+        beforeEach(() => autoExitSpawned = false);
+
+        it('should be rejected if a spawned process exits with error (piped command)', async () => {
+          const promise = Promise.all([
+            reversePromise(spawnAsPromised('foo | bar | baz', config)),
+            reversePromise(spawnAsPromised('foo | bar | baz', config)),
+            reversePromise(spawnAsPromised('foo | bar | baz', config)),
+          ]);
+
+          spawned[0].emit('exit', 1);
+          spawned[4].emit('exit', 2);
+          spawned[8].emit('exit', null, 'SIGNAL');
+
+          expect(await promise).toEqual([1, 2, 'SIGNAL']);
+          expectToHaveCleanedUp(3);
+        });
+
+        it('should be rejected if a spawned process errors (piped command)', async () => {
+          const promise = Promise.all([
+            reversePromise(spawnAsPromised('foo | bar | baz', config)),
+            reversePromise(spawnAsPromised('foo | bar | baz', config)),
+            reversePromise(spawnAsPromised('foo | bar | baz', config)),
+          ]);
+
+          spawned[0].emit('error', 'Test0');
+          spawned[4].emit('error', 'Test1');
+          spawned[8].emit('error', 'Test2');
+
+          expect(await promise).toEqual(['Test0', 'Test1', 'Test2']);
+          expectToHaveCleanedUp(3);
+        });
+
+        it('should be resolved when all spawned processes complete (piped commands)', async () => {
+          const resolved = jasmine.createSpy('resolved');
+
+          spawnAsPromised('foo | bar | baz', config).then(resolved);
+
+          // The promise's success handlers are executed asynchronously.
+          await tickAsPromised();
+          spawned[0].emit('exit', 0);
+          spawned[1].emit('exit', 0);
+          expect(resolved).not.toHaveBeenCalled();
+          expectNotToHaveCleanedUp();
+
+          await tickAsPromised();
+          spawned[2].emit('exit', 0);
+          expect(resolved).not.toHaveBeenCalled();
+          expectNotToHaveCleanedUp();
+
+          await tickAsPromised();
+          expect(resolved).toHaveBeenCalledWith('');
+          expectToHaveCleanedUp();
+        });
+      });
+    });
+
+    // With `sapVersion: 2`:
+    describe(`v2`, () => {
+      beforeEach(() => config.sapVersion = 2);
+
+      it('should spawn a process for the specified command', async () => {
+        await spawnAsPromised(rawCmd, config);
+        expect(cpSpawnSpy).toHaveBeenCalledWith('foo --bar', [], anyObj);
+      });
+
+      it('should not parse the specified command', async () => {
+        const unparsedCmd1 = 'foo1     "bar1" --baz1 --qux1="foo bar" "baz qux 1"';
+        await spawnAsPromised(unparsedCmd1, config);
+
+        expect(cpSpawnSpy).toHaveBeenCalledWith(unparsedCmd1, [], anyObj);
+
+        const unparsedCmd2 = '"foo2"     "bar2" --baz2 --qux2="foo bar" "baz qux 2"';
+        await spawnAsPromised(unparsedCmd2, config);
+
+        expect(cpSpawnSpy).toHaveBeenCalledWith(unparsedCmd2, [], anyObj);
+      });
+
+      it('should not handle command "piping" speciall (and only spawn one process)', async () => {
+        const pipedCmd = 'foo bar | bar "baz" | "baz" qux | qux "q u u x"';
+        await spawnAsPromised(pipedCmd, config);
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(1);
+        expect(cpSpawnSpy.calls.argsFor(0)).toEqual([pipedCmd, [], anyObj]);
+
+        expect(spawned[0].stdout.pipe).not.toHaveBeenCalled();
+        expect(spawned[1].stdout.pipe).not.toHaveBeenCalled();
+        expect(spawned[2].stdout.pipe).not.toHaveBeenCalled();
+      });
+
+      it('should use appropriate values for `stdio`', async () => {
+        // In default mode.
+        await spawnAsPromised(rawCmd, config);
+        const expectedStdio1 = ['inherit', 'inherit', 'inherit'];
+
+        expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio1);
+        expect(spawned[0].stdout.pipe).not.toHaveBeenCalled();
+
+        await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', config);
+        const expectedStdio2 = ['inherit', 'inherit', 'inherit'];
+
+        expect(cpSpawnSpy.calls.argsFor(1)[2].stdio).toEqual(expectedStdio2);
+        expect(spawned[1].stdout.pipe).not.toHaveBeenCalled();
+
+        // With `returnOutput: true`.
+        await spawnAsPromised(rawCmd, {...config, returnOutput: true});
+        const expectedStdio3 = ['inherit', 'pipe', 'inherit'];
+
+        expect(cpSpawnSpy.calls.argsFor(2)[2].stdio).toEqual(expectedStdio3);
+        expect(spawned[2].stdout.pipe).toHaveBeenCalledTimes(1);
+
+        await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', {...config, returnOutput: true});
+        const expectedStdio4 = ['inherit', 'pipe', 'inherit'];
+
+        expect(cpSpawnSpy.calls.argsFor(3)[2].stdio).toEqual(expectedStdio4);
+        expect(spawned[3].stdout.pipe).toHaveBeenCalledTimes(1);
       });
     });
   });

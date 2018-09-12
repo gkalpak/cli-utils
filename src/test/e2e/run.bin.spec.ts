@@ -72,18 +72,18 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     expect(result).toBeGreaterThan(0);  // Linux always exits with 2.
   });
 
-  it('should support `--gkcu-` arguments', async () => {
+  it('should support `--gkcu-` arguments (sapVersion: 1)', async () => {
     // debug
     let result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
     expect(unescapeDollars(result)).toBe(
       '[debug] Input command: \'echo baz\'\n' +
       '[debug] Expanded command: \'echo baz\'\n' +
       '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
-      '[debug]     (stdio: inherit, pipe, inherit)\n' +
+      '[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)\n' +
       '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
       '[debug] Expanded command: \'echo foo bar baz\'\n' +
       '[debug]   Running 1/1: \'echo\', \'foo, bar, baz\'\n' +
-      '[debug]     (stdio: inherit, inherit, inherit)\n' +
+      '[debug]     (sapVersion: 1, stdio: inherit, inherit, inherit)\n' +
       'foo bar baz\n' +
       '[debug]   Reseting the output and cursor styles.');
 
@@ -102,6 +102,41 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     // returnOutput=n in sub-command
     const subCmd = 'node -p \\"\'foo\\nbar\\nbaz\'\\" --gkcu-returnOutput=1';
     result = await runCmd(`"node -p \\"'\${*:::${subCmd}}'\\""`);
+    expect(result).toBe('foo\nbar\nbaz\nbaz');
+  });
+
+  it('should support `--gkcu-` arguments (sapVersion: 2)', async () => {
+    // debug
+    let result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug --gkcu-sapVersion=2');
+    expect(unescapeDollars(result)).toBe(
+      '[debug] Input command: \'echo baz\'\n' +
+      '[debug] Expanded command: \'echo baz\'\n' +
+      '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
+      '[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)\n' +
+      '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
+      '[debug] Expanded command: \'echo foo bar baz\'\n' +
+      '[debug]   Running 1/1: \'echo foo bar baz\', \'\'\n' +
+      '[debug]     (sapVersion: 2, stdio: inherit, inherit, inherit)\n' +
+      'foo bar baz\n' +
+      '[debug]   Reseting the output and cursor styles.');
+
+    // dryrun
+    result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-sapVersion=2 --gkcu-dryrun foo');
+    expect(result).toBe('echo foo bar {{echo_baz}}');
+
+    // returnOutput
+    result = await runCmd(
+      '"node -p \\"\'$1\\n\\${2:bar}\\n${3:::echo baz}\'\\"" foo --gkcu-returnOutput --gkcu-sapVersion=2');
+    expect(result).toBe('');
+
+    // returnOutput=n
+    result = await runCmd(
+      '"node -p \\"\'$1\\n\\${2:bar}\\n${3:::echo baz}\'\\"" --gkcu-sapVersion=2 --gkcu-returnOutput=2 foo');
+    expect(result).toBe('foo\nbar\nbaz');
+
+    // returnOutput=n in sub-command
+    const subCmd = 'node -p \\"\'foo\\nbar\\nbaz\'\\" --gkcu-returnOutput=1';
+    result = await runCmd(`"node -p \\"'\${*:::${subCmd}}'\\"" --gkcu-sapVersion=2`);
     expect(result).toBe('foo\nbar\nbaz\nbaz');
   });
 }));
