@@ -71,9 +71,10 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
     // debug
     let result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
     expect(result).toBe(
-      'Input command: \'echo baz\'\n' +
-      'Expanded command: \'echo baz\'\n' +
-      '  Running 1/1: \'echo\', \'baz\', (stdio: inherit,pipe,inherit)\n' +
+      '[debug] Input command: \'echo baz\'\n' +
+      '[debug] Expanded command: \'echo baz\'\n' +
+      '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
+      '[debug]     (stdio: inherit, pipe, inherit)\n' +
       'echo foo bar baz');
 
     // dryrun

@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import * as childProcess from 'child_process';
 import {commandUtils, IRunConfig} from '../../lib/command-utils';
 import {internalUtils} from '../../lib/internal-utils';
@@ -251,17 +252,17 @@ describe('runner', () => {
       });
 
       it('should log debug info when expanding fallback commands (in debug mode)', async () => {
-        spyOn(console, 'log');
+        const consoleDebugSpy = spyOn(console, 'debug');
 
         cmd = 'foo ${3:::three $*}';
 
         await expandCmd(cmd, runtimeArgs, config);
-        expect(console.log).not.toHaveBeenCalled();
+        expect(consoleDebugSpy).not.toHaveBeenCalled();
 
         await expandCmd(cmd, runtimeArgs, {debug: true});
-        expect(console.log).toHaveBeenCalledTimes(2);
-        expect(console.log).toHaveBeenCalledWith('Input command: \'three $*\'');
-        expect(console.log).toHaveBeenCalledWith('Expanded command: \'three baz "q u x"\'');
+        expect(consoleDebugSpy).toHaveBeenCalledTimes(2);
+        expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray('[debug] Input command: \'three $*\''));
+        expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray('[debug] Expanded command: \'three baz "q u x"\''));
       });
     });
   });
@@ -384,15 +385,15 @@ describe('runner', () => {
     });
 
     it('should log debug info (in debug mode)', async () => {
-      const consoleLogSpy = spyOn(console, 'log');
+      const consoleDebugSpy = spyOn(console, 'debug');
 
       await run(cmd, runtimeArgs, config);
-      expect(consoleLogSpy).not.toHaveBeenCalled();
+      expect(consoleDebugSpy).not.toHaveBeenCalled();
 
       await run(cmd, runtimeArgs, {debug: true});
-      expect(consoleLogSpy).toHaveBeenCalledTimes(2);
-      expect(consoleLogSpy).toHaveBeenCalledWith(`Input command: '${cmd}'`);
-      expect(consoleLogSpy).toHaveBeenCalledWith(`Expanded command: 'expanded:${cmd}'`);
+      expect(consoleDebugSpy).toHaveBeenCalledTimes(2);
+      expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray(`[debug] Input command: '${cmd}'`));
+      expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray(`[debug] Expanded command: 'expanded:${cmd}'`));
     });
 
     it('should pass errors to `utils.onError()`', async () => {

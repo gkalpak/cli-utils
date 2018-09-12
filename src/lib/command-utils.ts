@@ -182,8 +182,8 @@ export class CommandUtils {
     const expandedCmd = await this.expandCmd(cmd, runtimeArgs, config);
 
     if (config.debug) {
-      console.log(`Input command: '${cmd}'`);
-      console.log(`Expanded command: '${expandedCmd}'`);
+      this.debugMessage(`Input command: '${cmd}'`);
+      this.debugMessage(`Expanded command: '${expandedCmd}'`);
     }
 
     return this.spawnAsPromised(expandedCmd, config);
@@ -215,7 +215,7 @@ export class CommandUtils {
       }
 
       if (debug) {
-        console.log('  Reseting the output and cursor styles.');
+        this.debugMessage('  Reseting the output and cursor styles.');
       }
 
       // Reset the output style (e.g. bold) and show the cursor.
@@ -260,7 +260,9 @@ export class CommandUtils {
         };
 
         if (debug) {
-          console.log(`  Running ${idx + 1}/${arr.length}: '${executable}', '${args}', (stdio: ${options.stdio})`);
+          this.debugMessage(
+            `  Running ${idx + 1}/${arr.length}: '${executable}', '${args.join(', ')}'\n` +
+            `    (stdio: ${(options.stdio as string[]).join(', ')})`);
         }
 
         const proc = spawn(executable, args, options).
@@ -290,6 +292,16 @@ export class CommandUtils {
   }
 
   // Methods - Private
+  private debugMessage(msg: string): void {
+    const {gray} = require('chalk');
+    const formatted = msg.
+      split('\n').
+      map(line => gray(`[debug] ${line}`)).
+      join('\n');
+
+    console.debug(formatted);
+  }
+
   private insertAfter(items: string[], newItem: string, afterItem: string): void {
     for (let i = 0; i < items.length; ++i) {
       if (items[i] === afterItem) {

@@ -76,14 +76,16 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     // debug
     let result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
     expect(unescapeDollars(result)).toBe(
-      'Input command: \'echo baz\'\n' +
-      'Expanded command: \'echo baz\'\n' +
-      '  Running 1/1: \'echo\', \'baz\', (stdio: inherit,pipe,inherit)\n' +
-      'Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
-      'Expanded command: \'echo foo bar baz\'\n' +
-      '  Running 1/1: \'echo\', \'foo,bar,baz\', (stdio: inherit,inherit,inherit)\n' +
+      '[debug] Input command: \'echo baz\'\n' +
+      '[debug] Expanded command: \'echo baz\'\n' +
+      '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
+      '[debug]     (stdio: inherit, pipe, inherit)\n' +
+      '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
+      '[debug] Expanded command: \'echo foo bar baz\'\n' +
+      '[debug]   Running 1/1: \'echo\', \'foo, bar, baz\'\n' +
+      '[debug]     (stdio: inherit, inherit, inherit)\n' +
       'foo bar baz\n' +
-      '  Reseting the output and cursor styles.');
+      '[debug]   Reseting the output and cursor styles.');
 
     // dryrun
     result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-dryrun foo');
