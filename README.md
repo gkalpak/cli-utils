@@ -20,21 +20,21 @@ This package exposes the following utilities (see the respective source files fo
 
 - **[commandUtils][lib-command-utils]:**
 
-  - **`expandCmd(cmd: string, runtimeArgs: string[], config: {}): Promise<string>`:**<br />
+  - **`expandCmd(cmd: string, runtimeArgs: string[], config: IRunConfig): Promise<string>`:**<br />
     _Expand a command string, by substituting argument identifiers with the specified arguments. It
     also supports default/fallback arguments (specified either as static values or as commands to
     execute and use the output)._
 
-  - **`preprocessArgs(rawArgs: string[]): {args: string[], config: {}}`:**<br />
+  - **`preprocessArgs(rawArgs: string[]): {args: string[], config: IRunConfig}`:**<br />
     _Preprocess a list of input arguments into a list of arguments that can be used for
     substituting into commands. Also, derive a configuration object to modify the behavior of
     `commandUtils.run()`._
 
-  - **`run(cmd: string, runtimeArgs?: string[], config?: {}): Promise<string>`:**<br />
+  - **`run(cmd: string, runtimeArgs?: string[], config?: IRunConfig): Promise<string>`:**<br />
     _Run a command. Could be a complex command with `|`, `&&` and `||`. It also supports argument
     substitution with `commandUtils.expandCmd()`._
 
-  - **`spawnAsPromised(cmd: string, config?: {}): Promise<string>`:**<br />
+  - **`spawnAsPromised(cmd: string, config?: IRunConfig): Promise<string>`:**<br />
     _Spawn a complex command (or series of piped commands) and return a promise that resolves or
     rejects based on the command's outcome. It provides some extras on top of
     `child_process.spawn()`._
@@ -52,11 +52,11 @@ This package exposes the following utilities (see the respective source files fo
 
 - **[testingUtils][lib-testing-utils]:**
 
-  - **`testCmd(cmd: string): Promise<string>`:**<br />
+  - **`testCmd(cmd: string, config?: IRunConfig): Promise<string>`:**<br />
     _Run the specified command using `commandUtils.spawnAsPromised()`, capture the output and return
     it (after normalizing newlines and trimming it)._
 
-  - **`testScriptFactory(scriptPath: string): Function`:**<br />
+  - **`testScriptFactory(scriptPath: string, config?: IRunConfig): Function`:**<br />
     _Create a function that can be used for testing a Node.js script with `testingUtils.testCmd()`.
     Different arguments can be passed per call of the returned function._
 

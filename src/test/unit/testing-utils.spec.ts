@@ -25,6 +25,22 @@ describe('testing-utils', () => {
       expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: true});
     });
 
+    it('should support passing configuration to `commandUtils.spawnAsPromised()`', async () => {
+      const cmd = 'foo --bar | baz && qux';
+      const result = await testCmd(cmd, {dryrun: true, suppressTbj: true});
+
+      expect(result).toBe(`spawned(${cmd})`);
+      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {dryrun: true, returnOutput: true, suppressTbj: true});
+    });
+
+    it('should support overwriting `returnOutput`', async () => {
+      const cmd = 'foo --bar | baz && qux';
+      const result = await testCmd(cmd, {returnOutput: 42});
+
+      expect(result).toBe(`spawned(${cmd})`);
+      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: 42});
+    });
+
     it('should reject if `commandUtils.spawnAsPromised()` errors', async () => {
       // tslint:disable-next-line: no-string-throw
       cuSpawnAsPromisedSpy.and.callFake(() => { throw 'bar'; });
@@ -95,15 +111,23 @@ describe('testing-utils', () => {
         expect(tuTestCmdSpy).not.toHaveBeenCalled();
 
         testScript();
-        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar ');
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar ', undefined);
       });
 
       it('should support appending arguments per call', () => {
         testScript('--baz qux');
-        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar --baz qux');
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar --baz qux', undefined);
 
         testScript('42');
-        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar 42');
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar 42', undefined);
+      });
+
+      it('should support passing a config per call', () => {
+        testScript('--baz qux', {dryrun: true, sapVersion: 42});
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar --baz qux', {dryrun: true, sapVersion: 42});
+
+        testScript('1337', {dryrun: true, sapVersion: 42});
+        expect(tuTestCmdSpy).toHaveBeenCalledWith('node /foo/bar 1337', {dryrun: true, sapVersion: 42});
       });
 
       it('should forward the value returned by `testCmd()`', () => {

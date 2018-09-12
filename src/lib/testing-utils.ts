@@ -1,4 +1,4 @@
-import {commandUtils} from './command-utils';
+import {commandUtils, IRunConfig} from './command-utils';
 
 
 export class TestingUtils {
@@ -17,17 +17,21 @@ export class TestingUtils {
    *
    * @example
    * ```js
-   * const output = await testCmd('node -p "\'foo\r\nbar\r\n\'"');
+   * const output = await testCmd('node --print "\'foo\\r\\nbar\\r\\n\'"');
    * // output === 'foo\nbar';
+   *
+   * const output = await testCmd('node --print "\'foo\\r\\nbar\\r\\n\'"', {dryrun: true});
+   * // output === 'node --print "\'foo\\r\\nbar\\r\\n\'"';
    * ```
    *
    * @param cmd - The command to run.
+   * @param config? - A configuration object. See {@link command-utils/IRunConfig} for more details.
    *
    * @return A promise that resolves once the command has been executed. The resolved value is the output of the
    *     command.
    */
-  public async testCmd(cmd: string): Promise<string> {
-    const result = await commandUtils.spawnAsPromised(cmd, {returnOutput: true});
+  public async testCmd(cmd: string, config?: IRunConfig): Promise<string> {
+    const result = await commandUtils.spawnAsPromised(cmd, {returnOutput: true, ...config});
     return this.normalizeNewlines(this.stripCleanUpCharacters(result)).trim();
   }
 
@@ -48,11 +52,11 @@ export class TestingUtils {
    * @param scriptPath - The path to the Node.js script to be run.
    *
    * @return A function that runs the script (via `testCmd()`) when called. Optionally accepts extra arguments (as a
-   *     string) to be appended to the command.
+   *     string) to be appended to the command and a {@link command-utils/IRunConfig configuration object}.
    */
-  public testScriptFactory(scriptPath: string): (argsStr?: string) => Promise<string> {
+  public testScriptFactory(scriptPath: string): (argsStr?: string, config?: IRunConfig) => Promise<string> {
     const baseCmd = `node ${scriptPath}`;
-    return (argsStr = '') => this.testCmd(`${baseCmd} ${argsStr}`);
+    return (argsStr = '', config?: IRunConfig) => this.testCmd(`${baseCmd} ${argsStr}`, config);
   }
 
   /**
