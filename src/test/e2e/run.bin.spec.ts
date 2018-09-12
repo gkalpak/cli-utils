@@ -13,8 +13,13 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
       argsStr = unescapeDollars(argsStr).replace(/\$/g, '\\$$');
     }
 
-    return testScript(argsStr);
+    return testScript(argsStr, {sapVersion: 2});
   };
+
+  it('should execute the command', async () => {
+    const result = await runCmd('"echo foo bar"');
+    expect(result).toBe('foo bar');
+  });
 
   it('should correctly expand `$*`/`${*}`', async () => {
     let result = await runCmd('"echo $* \\${*:bar}"');
@@ -70,6 +75,23 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     // Use `2>&1` to suppress stderr output in test results.
     result = await reversePromise(runCmd('"echo \\${1337:::node -e process.exit(1337)}" foo bar baz qux 2>&1'));
     expect(result).toBeGreaterThan(0);  // Linux always exits with 2.
+  });
+
+  it('should support piped commands', async () => {
+    const out = 'process.stdout';
+    const pipeCmd = `node --eval \\"${out}.write('piped:'),process.stdin.on('data', ${out}.write.bind(${out}))\\"`;
+
+    let result = await runCmd(`"echo foo | ${pipeCmd}"`);
+    expect(result).toBe('piped:foo');
+
+    result = await runCmd(`"echo $1 \\\${2*:bar} | ${pipeCmd}" foo`);
+    expect(result).toBe('piped:foo bar');
+
+    result = await runCmd(`"echo \${0:::echo foo} bar \${1:baz} | ${pipeCmd}" qux`);
+    expect(result).toBe('piped:foo bar qux');
+
+    result = await runCmd(`"echo foo \${0:::echo bar | ${pipeCmd}}"`);
+    expect(result).toBe('foo piped:bar');
   });
 
   it('should support `--gkcu-` arguments (sapVersion: 1)', async () => {

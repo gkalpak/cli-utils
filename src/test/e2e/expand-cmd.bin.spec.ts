@@ -12,7 +12,7 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
       argsStr = argsStr.replace(/\\\$/g, '$$').replace(/\$/g, '\\$$');
     }
 
-    return testScript(argsStr);
+    return testScript(argsStr, {sapVersion: 2});
   };
 
   it('should correctly expand `$*`/`${*}`', async () => {
