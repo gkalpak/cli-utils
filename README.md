@@ -124,10 +124,10 @@ Things I want to (but won't necessarily) do:
 
 [aio-docs-utils]: https://marketplace.visualstudio.com/items?itemName=gkalpak.aio-docs-utils
 [aliases]: https://www.npmjs.com/package/@gkalpak/aliases
-[bin-expand-cmd]: src/bin/expand-cmd.ts
-[bin-run]: src/bin/run.ts
+[bin-expand-cmd]: https://github.com/gkalpak/cli-utils/tree/master/src/bin/expand-cmd.ts
+[bin-run]: https://github.com/gkalpak/cli-utils/tree/master/src/bin/run.ts
 [build-status]: https://travis-ci.org/gkalpak/cli-utils
 [build-status-image]: https://travis-ci.org/gkalpak/cli-utils.svg?branch=master
-[lib-command-utils]: src/lib/command-utils.ts
-[lib-process-utils]: src/lib/process-utils.ts
-[lib-testing-utils]: src/lib/testing-utils.ts
+[lib-command-utils]: https://github.com/gkalpak/cli-utils/tree/master/src/lib/command-utils.ts
+[lib-process-utils]: https://github.com/gkalpak/cli-utils/tree/master/src/lib/process-utils.ts
+[lib-testing-utils]: https://github.com/gkalpak/cli-utils/tree/master/src/lib/testing-utils.ts
