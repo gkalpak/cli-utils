@@ -39,7 +39,7 @@ import {internalUtils} from '../lib/internal-utils';
  *
  * @param cmd - The command to expand.
  * @param ...rawArgs - The arguments, including both runtime arguments (that will be used for substituting) and
- *     configuration arguments.
+ *     {@link commandUtils#IRunConfig configuration arguments}.
  *
  * @return The expanded command, with arguments substituted (including running default/fallback value sub-commands, as
  *     necessary).

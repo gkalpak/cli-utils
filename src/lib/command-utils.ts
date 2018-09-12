@@ -5,7 +5,11 @@ import {processUtils} from './process-utils';
 
 
 /**
- * A configuration object, specifying the behavior of {@link commandUtils#run run()}.
+ * A configuration object, specifying the behavior of {@link commandUtils#expandCmd expandCmd()},
+ * {@link commandUtils#run run()}, {@link commandUtils#spawnAsPromised spawnAsPromised()}.
+ *
+ * For cli commands that accept configuration options, names must be prefixed with `--gkcu-` (but letter casing should
+ * be preserved). Also, if you want to pass a value, you must use `=` (not space). E.g.: `--gkcu-sapVersion=2`
  */
 export interface IRunConfig {
   /**

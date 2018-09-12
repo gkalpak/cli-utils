@@ -36,11 +36,14 @@ import {internalUtils} from '../lib/internal-utils';
  *
  * gkcu-run "echo \${1:Hello}, \${0:::whoami}!" Hey
  * #--> Hey, gkalpak!
+ *
+ * gkcu-run "echo \${1:Hello}, \${0:::whoami}!" Howdy --gkcu-dryrun
+ * #--> echo Howdy, {{whoami}}!
  * ```
  *
  * @param cmd - The command to run (after substitution).
  * @param ...rawArgs - The arguments, including both runtime arguments (that will be used for substituting) and
- *     configuration arguments.
+ *     {@link commandUtils#IRunConfig configuration arguments}.
  *
  * @return The output of the command (and any sub-commands that were run during argument substitution).
  */
