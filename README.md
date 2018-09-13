@@ -98,7 +98,7 @@ This package exposes the following commands (see the respective source files for
 The following test-types/modes are available:
 
 - **Code-linting:** `npm run lint`
-  _Lint JavaScript files using ESLint._
+  _Lint TypeScript files using TSLint._
 
 - **Unit tests:** `npm run test-unit`
   _Run all the unit tests once. These tests are quick and suitable to be run on every change._
