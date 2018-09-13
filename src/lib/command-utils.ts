@@ -66,6 +66,9 @@ export class CommandUtils {
    * - `${*:::command}`, `${n:::command}`, `${n*:::command}`: Substitute with all arguments (`*`) or the nth
    *   argument (`n`) or the nth and all subsequent arguments (`n*`). If not specified, run `command` and substitute
    *   with its trimmed output.
+   *   NOTE: Fallback commands inherit the {@link commandUtils#IRunConfig configuration} of the main command, with the
+   *         exception of `returnOutput`, which can be overwritten (by adding `--gkcu-returnOutput[=<x>]` at the end of
+   *         the command).
    *
    * In all rules above, `$`s can also be escaped with `\`, which will be removed when executing the command. This
    * allows avoiding variable expansion in non-Windows platforms, while still not affecting the output on Windows.
