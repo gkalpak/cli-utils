@@ -122,9 +122,14 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     expect(result).toBe('foo\nbar\nbaz');
 
     // returnOutput=n in sub-command
-    const subCmd = 'node -p \\"\'foo\\nbar\\nbaz\'\\" --gkcu-returnOutput=1';
-    result = await runCmd(`"node -p \\"'\${*:::${subCmd}}'\\""`);
+    const subCmd1 = 'node -p \\"\'foo\\nbar\\nbaz\'\\" --gkcu-returnOutput=1';
+    result = await runCmd(`"node -p \\"'\${*:::${subCmd1}}'\\""`);
     expect(result).toBe('foo\nbar\nbaz\nbaz');
+
+    // returnOutput=n in multiple sub-command
+    const subCmd2 = 'node -p \\"\'foo\\nbar\\nbaz\'\\" --gkcu-returnOutput=1';
+    result = await runCmd(`"node -p \\"'\${*:::${subCmd2}} \${*:::${subCmd2}}'\\""`);
+    expect(result).toBe('foo\nbar\nbaz\nbaz baz');
   });
 
   it('should support `--gkcu-` arguments (sapVersion: 2)', async () => {
@@ -160,5 +165,10 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     const subCmd = 'node -p \\"\'foo\\nbar\\nbaz\'\\" --gkcu-returnOutput=1';
     result = await runCmd(`"node -p \\"'\${*:::${subCmd}}'\\"" --gkcu-sapVersion=2`);
     expect(result).toBe('foo\nbar\nbaz\nbaz');
+
+    // returnOutput=n in multiple sub-command
+    const subCmd2 = 'node -p \\"\'foo\\nbar\\nbaz\'\\" --gkcu-returnOutput=1';
+    result = await runCmd(`"node -p \\"'\${*:::${subCmd2}} \${*:::${subCmd2}}'\\"" --gkcu-sapVersion=2`);
+    expect(result).toBe('foo\nbar\nbaz\nbaz baz');
   });
 }));

@@ -82,9 +82,15 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
     expect(result).toBe('echo foo bar {{echo_baz}}');
 
     // returnOutput=n in sub-command
-    const subCmd = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
-    result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd}}" foo`);
+    const subCmd1 = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
+    result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd1}}" foo`);
     expect(result).toBe('blah\nblah\nbaz\necho foo bar blah\nbaz');
+
+    // returnOutput=n in multiple sub-command
+    const subCmd2 = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=1';
+    const subCmd3 = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
+    result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd2}} \${4:::${subCmd3}}" foo`);
+    expect(result).toBe('blah\nblah\nbaz\necho foo bar baz blah\nbaz');
   });
 
   it('should support `--gkcu-` arguments (sapVersion: 2)', async () => {
@@ -102,8 +108,14 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
     expect(result).toBe('echo foo bar {{echo_baz}}');
 
     // returnOutput=n in sub-command
-    const subCmd = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
-    result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd}}" foo --gkcu-sapVersion=2`);
+    const subCmd1 = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
+    result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd1}}" foo --gkcu-sapVersion=2`);
     expect(result).toBe('blah\nblah\nbaz\necho foo bar blah\nbaz');
+
+    // returnOutput=n in multiple sub-command
+    const subCmd2 = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=1';
+    const subCmd3 = 'node -p \\"\'blah\\nblah\\nbaz\'\\" --gkcu-returnOutput=2';
+    result = await expandCmd(`"echo $1 \\\${2:bar} \${3:::${subCmd2}} \${4:::${subCmd3}}" foo --gkcu-sapVersion=2`);
+    expect(result).toBe('blah\nblah\nbaz\necho foo bar baz blah\nbaz');
   });
 }));

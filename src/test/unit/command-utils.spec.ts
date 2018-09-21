@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import * as childProcess from 'child_process';
+import {Writable} from 'stream';
 import {commandUtils, IRunConfig} from '../../lib/command-utils';
 import {internalUtils} from '../../lib/internal-utils';
 import {processUtils} from '../../lib/process-utils';
@@ -168,6 +169,14 @@ describe('runner', () => {
         expect(cuSpawnAsPromisedSpy).toHaveBeenCalledTimes(2);
       });
 
+      it('should correctly handle occurrences of a fallback command with different leading whitespace', async () => {
+        cmd = 'foo ${3:::three} /path/to/${3:::three}   ${3:::three}';
+        const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
+
+        expect(expandedCmd).toBe('foo {{three}} /path/to/{{three}}   {{three}}');
+        expect(cuSpawnAsPromisedSpy).toHaveBeenCalledTimes(1);
+      });
+
       it('should treat empty output as non-specified value', async () => {
         cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(''));
 
@@ -201,14 +210,49 @@ describe('runner', () => {
       });
 
       it('should support setting `returnOutput: n` (with the special `--gkcu-returnOutput=n` syntax)', async () => {
+        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve('.\n'.repeat(50)));
         cmd = 'foo ${3:::three --gkcu-returnOutput=33}';
         config.returnOutput = false;
 
-        await expandCmd(cmd, runtimeArgs, config);
+        const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
 
+        expect(expandedCmd).toBe(`foo ${'.\n'.repeat(33).trim()}`);
         expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith('three', jasmine.objectContaining({
           quux: 'quuux',
-          returnOutput: 33,
+          returnOutput: Infinity,
+        }));
+        expect(config.returnOutput).toBe(false);
+      });
+
+      it('should support setting `returnOutput: n` (with the special `--gkcu-returnOutput=n` syntax)', async () => {
+        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve('.\n'.repeat(50)));
+        cmd = 'foo ${3:::three --gkcu-returnOutput=33}';
+        config.returnOutput = false;
+
+        const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
+
+        expect(expandedCmd).toBe(`foo ${'.\n'.repeat(33).trim()}`);
+        expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith('three', jasmine.objectContaining({
+          quux: 'quuux',
+          returnOutput: Infinity,
+        }));
+        expect(config.returnOutput).toBe(false);
+      });
+
+      it('should correctly handle occurrences of a fallback command with different `returnOutput` values', async () => {
+        const dots = (count: number) => '.\n'.repeat(count).trim();
+
+        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(dots(10)));
+        cmd = 'foo ${3:::three} ${3:::three --gkcu-returnOutput=4} ${3:::three --gkcu-returnOutput=2}';
+        config.returnOutput = false;
+
+        const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
+
+        expect(expandedCmd).toBe(`foo ${dots(10)} ${dots(4)} ${dots(2)}`);
+        expect(cuSpawnAsPromisedSpy).toHaveBeenCalledTimes(1);
+        expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith('three', jasmine.objectContaining({
+          quux: 'quuux',
+          returnOutput: Infinity,
         }));
         expect(config.returnOutput).toBe(false);
       });
@@ -440,7 +484,6 @@ describe('runner', () => {
     let cancelCleanUpSpy: jasmine.Spy;
     let unsuppressTbjSpy: jasmine.Spy;
 
-
     beforeEach(() => {
       let spawnedIndex = -1;
       spawned = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(() => createMockProcess(jasmine));
@@ -556,6 +599,25 @@ describe('runner', () => {
           await tickAsPromised();
           expect(resolved).toHaveBeenCalledWith('');
           expectToHaveCleanedUp();
+        });
+
+        it('should be resolved with the appropriate value (based on `returnOutput`)', async () => {
+          spyOn(process.stdout, 'write');
+          const resolved = jasmine.createSpy('resolved');
+
+          spawnAsPromised(rawCmd, {returnOutput: 2}).then(resolved);
+
+          expect(spawned[0].stdout.pipe).toHaveBeenCalledTimes(1);
+
+          const dataCapturingStream: Writable = (spawned[0].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0];
+          dataCapturingStream.emit('data', Buffer.from('  foo  '));
+          dataCapturingStream.emit('data', Buffer.from('  \n  bar  \n  '));
+          dataCapturingStream.emit('data', Buffer.from('  baz  \n  '));
+          dataCapturingStream.emit('data', Buffer.from('  qux  \n  '));
+          spawned[0].emit('exit', 0);
+          await tickAsPromised();
+
+          expect(resolved).toHaveBeenCalledWith('baz  \n    qux');
         });
       });
     }));

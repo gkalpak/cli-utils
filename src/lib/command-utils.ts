@@ -52,6 +52,12 @@ export interface IRunConfig {
   suppressTbj?: boolean;
 }
 
+interface ISubCommandInfo {
+  placeholder: string;
+  returnOutput: boolean | number;
+  transformValue: (value: string) => string;
+}
+
 export class CommandUtils {
   /**
    * Expand a command string, by substituting argument identifiers with the specified arguments. It also supports
@@ -93,10 +99,10 @@ export class CommandUtils {
     // 4, 7: $\d+
     // 8: default/fallback value (possibly with `returnOutput` limit)
     const re = /(\s{0,1})\\?\$(?:(\*)|([1-9]+)\*|(\d+)|{(?:(?:(\*)|([1-9]+)\*|(\d+))(?::([^}]*))?)})/g;
-    const cmdPromises = new Map<string, Promise<string>>();
+    const subCommands = new Map<string, ISubCommandInfo[]>();
 
     let expandedCmd = cmd.replace(re, (_, g1, g2, g3, g4, g5, g6, g7, g8) => {
-      const valToReplacement = (val: string) => !val ? '' : `${g1}${val}`;
+      const transformValue = (val: string) => !val ? '' : `${g1}${val}`;
 
       // Value based on the supplied arguments.
       const startIdx = (g2 || g5) ? 0 : (g3 || g6 || g4 || g7) - 1;
@@ -119,28 +125,40 @@ export class CommandUtils {
           });
           const placeholder = `${Math.random()}`;
 
-          if (!cmdPromises.has(subCmd)) {
-            const runConfig: IRunConfig = Object.assign({}, config, {returnOutput});
-            const cmdPromise = this.run(subCmd, runtimeArgs, runConfig).
-              then(result => this.trimOutput(result)).
-              then(result => valToReplacement(runConfig.dryrun ? `{{${result.replace(/\s/g, '_')}}}` : result));
-
-            cmdPromises.set(subCmd, cmdPromise);
+          if (!subCommands.has(subCmd)) {
+            subCommands.set(subCmd, []);
           }
 
-          cmdPromises.set(subCmd, cmdPromises.get(subCmd)!.then(repl => {
-            expandedCmd = expandedCmd.replace(placeholder, repl);
-            return repl;
-          }));
+          subCommands.get(subCmd)!.push({placeholder, returnOutput, transformValue});
 
           return placeholder;
         }
       }
 
-      return valToReplacement(value);
+      return transformValue(value);
     });
 
-    await Promise.all(cmdPromises.values());
+    const subCommandPromises = Array.from(subCommands.entries()).map(([subCmd, infoList]) => {
+      const hasNumericReturnOutput = infoList.some(info => typeof info.returnOutput === 'number');
+      const returnOutput = hasNumericReturnOutput ? Infinity : true;
+      const runConfig: IRunConfig = Object.assign({}, config, {returnOutput});
+
+      const subCmdPromise = this.run(subCmd, runtimeArgs, runConfig).then(result => this.trimOutput(result));
+      const replPromises = infoList.map(info => subCmdPromise.then(result => {
+        // Retrieve the part of the output that this sub-command cares about.
+        const value = (typeof info.returnOutput === 'number') ? this.getLastLines(result, info.returnOutput) : result;
+
+        // Construct the replacement for this sub-command (e.g. leading whitespace may vary).
+        const repl = info.transformValue(config.dryrun ? `{{${value.replace(/\s/g, '_')}}}` : value);
+
+        // Replace in `expandedCmd`.
+        expandedCmd = expandedCmd.replace(info.placeholder, repl);
+      }));
+
+      return Promise.all(replPromises);
+    });
+
+    await Promise.all(subCommandPromises);
 
     return expandedCmd;
   }
@@ -257,7 +275,7 @@ export class CommandUtils {
 
       const getReturnData = !returnOutputSubset ?
         () => data :
-        () => data.trim().split('\n').slice(-(returnOutput as number)).join('\n');
+        () => this.getLastLines(data.trim(), returnOutput as number);
 
       const pipedCmdSpecs = this.parseRawCmd(rawCmd, sapVersion, dryrun);
 
@@ -317,6 +335,10 @@ export class CommandUtils {
       join('\n');
 
     console.debug(formatted);
+  }
+
+  private getLastLines(input: string, lineCount: number) {
+    return input.split('\n').slice(-lineCount).join('\n').trim();
   }
 
   private insertAfter(items: string[], newItem: string, afterItem: string): void {
