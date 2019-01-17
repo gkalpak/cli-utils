@@ -551,7 +551,8 @@ describe('runner', () => {
       });
 
       it('should suppress "Terminate batch job (Y/N)?" confirmation on Windows with `suppressTbj: true`', async () => {
-        const suppressTbjSpy = spyOn(processUtils, 'suppressTerminateBatchJobConfirmation').and.callThrough();
+        const suppressTbjSpy = spyOn(processUtils, 'suppressTerminateBatchJobConfirmation').and.
+          returnValue(internalUtils.noop);
 
         await spawnAsPromised(rawCmd, config);
         expect(suppressTbjSpy).not.toHaveBeenCalled();
