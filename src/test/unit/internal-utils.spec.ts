@@ -5,8 +5,8 @@ import {reversePromise, tickAsPromised} from '../test-utils';
 
 describe('internal-utils', () => {
   describe('.finallyAsPromised()', () => {
-    const finallyAsPromised: typeof internalUtils.finallyAsPromised =
-      internalUtils.finallyAsPromised.bind(internalUtils);
+    const finallyAsPromised =
+      internalUtils.finallyAsPromised.bind(internalUtils) as typeof internalUtils.finallyAsPromised;
     let callback: jasmine.Spy;
 
     beforeEach(() => callback = jasmine.createSpy('callback'));
