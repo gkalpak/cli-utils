@@ -307,7 +307,7 @@ export class CommandUtils {
             if (isLast) return resolve(getReturnData());
           });
 
-        if (prevStdout) prevStdout.pipe(proc.stdin);
+        if (prevStdout) prevStdout.pipe(proc.stdin!);
 
         return proc.stdout;
       }, null);

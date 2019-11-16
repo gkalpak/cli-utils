@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import * as chalk from 'chalk';
 import {internalUtils} from '../../lib/internal-utils';
 import {reversePromise, tickAsPromised} from '../test-utils';
 

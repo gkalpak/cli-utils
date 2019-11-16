@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import * as chalk from 'chalk';
 import * as childProcess from 'child_process';
 import {Writable} from 'stream';
 import {commandUtils, IRunConfig} from '../../lib/command-utils';
@@ -461,7 +461,7 @@ describe('runner', () => {
       Object.assign(new (childProcess as any).ChildProcess(), {
         stdin: {},
         stdout: {pipe: jsmn.createSpy('mockProcess.stdout.pipe')},
-      }) as childProcess.ChildProcess;
+      }) as childProcess.ChildProcessWithoutNullStreams;
     const expectNotToHaveCleanedUp = () => {
       expect(cancelCleanUpSpy).not.toHaveBeenCalled();
       expect(unsuppressTbjSpy).not.toHaveBeenCalled();
@@ -474,9 +474,9 @@ describe('runner', () => {
       cancelCleanUpSpy.calls.reset();
       unsuppressTbjSpy.calls.reset();
     };
-    let spawned: childProcess.ChildProcess[];
+    let spawned: childProcess.ChildProcessWithoutNullStreams[];
     let autoExitSpawned: boolean;
-    let anyObj: jasmine.Any;
+    let anyObj: jasmine.AsymmetricMatcher<any>;
     let rawCmd: string;
     let config: IRunConfig;
     let cpSpawnSpy: jasmine.Spy;
@@ -497,7 +497,7 @@ describe('runner', () => {
           Promise.resolve().then(() => proc.emit('exit', 0));
         }
 
-        return proc;
+        return proc as any;
       });
 
       cancelCleanUpSpy = jasmine.createSpy('cancelCleanUp');
