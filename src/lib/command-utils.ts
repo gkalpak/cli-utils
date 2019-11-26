@@ -98,7 +98,7 @@ export class CommandUtils {
     // 3, 6: $\d+*
     // 4, 7: $\d+
     // 8: default/fallback value (possibly with `returnOutput` limit)
-    const re = /(\s{0,1})\\?\$(?:(\*)|([1-9]+)\*|(\d+)|{(?:(?:(\*)|([1-9]+)\*|(\d+))(?::([^}]*))?)})/g;
+    const re = /(\s{0,1})\\?\$(?:(\*)|([1-9]+)\*|(\d+)|{(?:(\*)|([1-9]+)\*|(\d+))(?::([^}]*))?})/g;
     const subCommands = new Map<string, ISubCommandInfo[]>();
 
     let expandedCmd = cmd.replace(re, (_, g1, g2, g3, g4, g5, g6, g7, g8) => {
