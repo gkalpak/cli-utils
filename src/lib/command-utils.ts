@@ -357,7 +357,7 @@ export class CommandUtils {
     items.splice(idx, 0, newItem);
   }
 
-  private parseRawCmd(rawCmd: string, sapVersion: number, dryrun = false): Array<{executable: string, args: string[]}> {
+  private parseRawCmd(rawCmd: string, sapVersion: number, dryrun = false): {executable: string, args: string[]}[] {
     switch (sapVersion) {
       case 1:
         // Traditional (v1) parsing.
