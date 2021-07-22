@@ -1,4 +1,4 @@
-# cli-utils [![Build Status][build-status-image]][build-status]
+# cli-utils [![Build status][build-status-image]][build-status]
 
 ## Description
 
@@ -126,8 +126,8 @@ Things I want to (but won't necessarily) do:
 [aliases]: https://www.npmjs.com/package/@gkalpak/aliases
 [bin-expand-cmd]: https://github.com/gkalpak/cli-utils/tree/master/src/bin/expand-cmd.ts
 [bin-run]: https://github.com/gkalpak/cli-utils/tree/master/src/bin/run.ts
-[build-status]: https://travis-ci.org/gkalpak/cli-utils
-[build-status-image]: https://travis-ci.org/gkalpak/cli-utils.svg?branch=master
+[build-status]: https://github.com/gkalpak/cli-utils/actions/workflows/ci.yml
+[build-status-image]: https://github.com/gkalpak/cli-utils/actions/workflows/ci.yml/badge.svg?branch=master&event=push
 [lib-command-utils]: https://github.com/gkalpak/cli-utils/tree/master/src/lib/command-utils.ts
 [lib-process-utils]: https://github.com/gkalpak/cli-utils/tree/master/src/lib/process-utils.ts
 [lib-testing-utils]: https://github.com/gkalpak/cli-utils/tree/master/src/lib/testing-utils.ts
