@@ -132,7 +132,7 @@ describe('process-utils', () => {
     });
 
     it('should do nothing on non-Windows platforms', () => {
-      mockProc.platform = 'linux';
+      (mockProc.platform as string) = 'linux';
       suppressTerminateBatchJobConfirmation(mockProc);
 
       expect(createInterfaceSpy).not.toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe('process-utils', () => {
     });
 
     it('should still return a (no-op) `unsuppress` function on non-Windows platforms', () => {
-      mockProc.platform = 'linux';
+      (mockProc.platform as string) = 'linux';
       const unsuppressTbj = suppressTerminateBatchJobConfirmation(mockProc);
 
       expect(unsuppressTbj).toBe(internalUtils.noop);
