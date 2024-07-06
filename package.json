@@ -27,7 +27,7 @@
     "pretest-unit": "npm run build",
     "test-unit": "npm run ~~test-unit",
     "postversion": "git push && git push --tags",
-    "~~build": "tsc --project ./",
+    "~~build": "tsc --build tsconfig.json",
     "~~build-watch": "npm run ~~build -- --watch",
     "~~test-e2e": "jasmine out/test/e2e/**/*.spec.js",
     "~~test-pkg": "node scripts/test-pkg",
