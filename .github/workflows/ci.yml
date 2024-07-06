@@ -1,6 +1,5 @@
 name: CI
 on:
-  - pull_request
   - push
 jobs:
   test:
@@ -12,13 +11,13 @@ jobs:
           - macos-latest
           - windows-latest
         node_version:
-          - 12
-          - 14
+          - 16
+          - 18
           - lts/*
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
           cache: npm
