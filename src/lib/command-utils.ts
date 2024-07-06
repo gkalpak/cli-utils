@@ -256,9 +256,7 @@ export class CommandUtils {
         this.debugMessage('  Reseting the output and cursor styles.');
       }
 
-      // Reset the output style (e.g. bold) and show the cursor.
-      process.stdout.write('\u001b[0m');
-      process.stdout.write('\u001b[?25h');
+      internalUtils.resetOutputStyle(process.stdout);
     };
     const cancelCleanUp = processUtils.doOnExit(process, cleanUp);
     const unsuppressTbj = suppressTbj ?
@@ -413,10 +411,8 @@ export class CommandUtils {
   }
 
   private trimOutput(str: string): string {
-    // eslint-disable-next-line no-control-regex
-    const cursorMoveRe = /\u001b\[\d+[a-d]/gi;
     return str.
-      replace(cursorMoveRe, '').
+      replace(internalUtils.escapeSeqRes.moveCursor, '').
       trim();
   }
 }

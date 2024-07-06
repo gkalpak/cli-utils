@@ -1,5 +1,6 @@
 /// <reference types="jasmine" />
 import {commandUtils, IRunConfig} from './command-utils';
+import {internalUtils} from './internal-utils';
 
 
 export class TestingUtils {
@@ -33,7 +34,7 @@ export class TestingUtils {
    */
   public async testCmd(cmd: string, config?: IRunConfig): Promise<string> {
     const result = await commandUtils.spawnAsPromised(cmd, {returnOutput: true, ...config});
-    return this.normalizeNewlines(this.stripCleanUpCharacters(result)).trim();
+    return this.normalizeNewlines(internalUtils.stripOutputStyleResetSequences(result).trim());
   }
 
   /**
@@ -92,11 +93,6 @@ export class TestingUtils {
   // Methods - Private
   private normalizeNewlines(str: string): string {
     return str.replace(/\r\n?/g, '\n');
-  }
-
-  private stripCleanUpCharacters(str: string): string {
-    // eslint-disable-next-line no-control-regex
-    return str.replace(/\u001b\[(?:0m|\?25h)/gi, '');
   }
 }
 

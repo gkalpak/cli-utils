@@ -205,4 +205,43 @@ describe('internal-utils', () => {
       expect(processExitSpy).toHaveBeenCalledWith(1);
     });
   });
+
+  describe('.resetOutputStyle()', () => {
+    const resetOutputStyle = internalUtils.resetOutputStyle.bind(internalUtils);
+
+    it('should be a function', () => {
+      expect(resetOutputStyle).toEqual(jasmine.any(Function));
+    });
+
+    it('should reset styles', () => {
+      const stream = {write: jasmine.createSpy('write')} as unknown as NodeJS.WriteStream;
+
+      resetOutputStyle(stream);
+
+      expect(stream.write).toHaveBeenCalledWith('\u001b[0m');
+      expect(stream.write).toHaveBeenCalledWith('\u001b[?25h');
+    });
+  });
+
+  describe('.stripOutputStyleResetSequences()', () => {
+    const stripOutputStyleResetSequences = internalUtils.stripOutputStyleResetSequences.bind(internalUtils);
+
+    it('should be a function', () => {
+      expect(stripOutputStyleResetSequences).toEqual(jasmine.any(Function));
+    });
+
+    it('should strip output style reset sequences', () => {
+      const inputStr = '1 \u001b[0m2 \u001b[?25h 3\u001B[?25H  4 \u001B[0M5';
+      const expectedStr = '1 2  3  4 5';
+
+      expect(stripOutputStyleResetSequences(inputStr)).toBe(expectedStr);
+    });
+
+    it('should not strip other sequences', () => {
+      const inputStr = '1 \u001b[1a2 \u001b[22B 3\u001B[333c  4 \u001B[4444D5';
+      const expectedStr = inputStr;
+
+      expect(stripOutputStyleResetSequences(inputStr)).toBe(expectedStr);
+    });
+  });
 });
