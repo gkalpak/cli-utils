@@ -1,5 +1,6 @@
-import {spawn, SpawnOptions} from 'child_process';
-import {PassThrough, Readable} from 'stream';
+import {spawn, SpawnOptions} from 'node:child_process';
+import {PassThrough, Readable} from 'node:stream';
+
 import {internalUtils} from './internal-utils';
 import {processUtils} from './process-utils';
 
@@ -119,7 +120,7 @@ export class CommandUtils {
         } else {
           // It is a command.
           let returnOutput: boolean | number = true;
-          const subCmd = match[1].replace(/ --gkcu-returnOutput=(\d+)$/, (__, g) => {
+          const subCmd = match[1]!.replace(/ --gkcu-returnOutput=(\d+)$/, (__, g) => {
             returnOutput = +g;
             return '';
           });
@@ -184,7 +185,7 @@ export class CommandUtils {
       const [key, ...rest] = arg.split('=');
       const value = rest.join('=');
 
-      config[key] = +value || value || true;
+      config[key as string] = +value || value || true;
     };
 
     const config = Object.create(null);
@@ -240,8 +241,8 @@ export class CommandUtils {
    *     (some part of) the output of the command (if `returnOutput` is set and not false).
    */
   public spawnAsPromised(
-    rawCmd: string,
-    {debug, dryrun, returnOutput, sapVersion = 1, suppressTbj}: IRunConfig = {},
+      rawCmd: string,
+      {debug, dryrun, returnOutput, sapVersion = 1, suppressTbj}: IRunConfig = {},
   ): Promise<string> {
     const returnOutputSubset = (typeof returnOutput === 'number');
 
@@ -296,8 +297,8 @@ export class CommandUtils {
 
         if (debug) {
           this.debugMessage(
-            `  Running ${idx + 1}/${arr.length}: '${executable}', '${args.join(', ')}'\n` +
-            `    (sapVersion: ${sapVersion}, stdio: ${(options.stdio as string[]).join(', ')})`);
+              `  Running ${idx + 1}/${arr.length}: '${executable}', '${args.join(', ')}'\n` +
+              `    (sapVersion: ${sapVersion}, stdio: ${(options.stdio as string[]).join(', ')})`);
         }
 
         const proc = spawn(executable, args, options).
@@ -328,7 +329,7 @@ export class CommandUtils {
 
   // Methods - Private
   private debugMessage(msg: string): void {
-    const {gray} = require('chalk');
+    const {gray} = require('chalk'); // eslint-disable-line @typescript-eslint/no-var-requires
     const formatted = msg.
       split('\n').
       map(line => gray(`[debug] ${line}`)).
@@ -364,10 +365,11 @@ export class CommandUtils {
         return rawCmd.
           split(/\s+\|\s+/).
           map(cmd => this.parseSingleCmd(cmd, dryrun));
-      case 2:
+      case 2: {
         // Since it will be executed in a shell, there is no need to handle anything specially. (Or is it?)
         const executable = !dryrun ? rawCmd : `node --print '${JSON.stringify(rawCmd).replace(/'/g, '\\\'')}'`;
-        return [{executable, args: []}];
+        return [{args: [], executable}];
+      }
       default:
         throw new Error(`Unknown 'sapVersion' (${sapVersion}).`);
     }
@@ -380,7 +382,7 @@ export class CommandUtils {
         const newTokens = (idx % 2) ? [`"${str}"`] : str.split(' ');
         const lastToken = arr[arr.length - 1];
 
-        if (lastToken) arr[arr.length - 1] += newTokens.shift();
+        if (lastToken) arr[arr.length - 1] = lastToken + newTokens.shift();
 
         return arr.concat(newTokens);
       }, [] as string[]).
@@ -411,6 +413,7 @@ export class CommandUtils {
   }
 
   private trimOutput(str: string): string {
+    // eslint-disable-next-line no-control-regex
     const cursorMoveRe = /\u001b\[\d+[a-d]/gi;
     return str.
       replace(cursorMoveRe, '').

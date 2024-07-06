@@ -1,0 +1,146 @@
+{
+  "root": true,
+  "extends": [
+    "eslint:recommended",
+    "plugin:import/recommended"
+  ],
+  "plugins": [
+    "import"
+  ],
+  "env": {
+	  "es2022": true,
+    "node": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "commonjs"
+  },
+  "rules": {
+    "arrow-parens": ["error", "as-needed"],
+    "dot-location": ["error", "object"],
+    "import/extensions": ["error", "never", {"json": "always"}],
+    "import/first": "error",
+    "import/group-exports": "error",
+    "import/newline-after-import": ["error", {"considerComments": true, "count": 2, "exactCount": true}],
+    "import/no-absolute-path": "error",
+    "import/no-anonymous-default-export": ["error", {"allowLiteral": true}],
+    "import/no-deprecated": "error",
+    "import/no-empty-named-blocks": "error",
+    "import/no-named-default": "error",
+    "import/no-namespace": "error",
+    "import/no-self-import": "error",
+    "import/no-unassigned-import": "error",
+    "import/no-useless-path-segments": ["error", {"noUselessIndex": true}],
+    "import/order": [
+      "error",
+      {
+        "alphabetize": {"caseInsensitive": true, "order": "asc", "orderImportKind": "asc"},
+        "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
+        "newlines-between": "always",
+        "warnOnUnassignedImports": true
+      }
+    ],
+    "indent": [
+      "error",
+      2,
+      {
+        "CallExpression": {"arguments": 2},
+        "FunctionDeclaration": {"parameters": 2},
+        "FunctionExpression": {"parameters": 2},
+        "SwitchCase": 1
+      }
+    ],
+    "linebreak-style": ["error", "unix"],
+    "max-classes-per-file": ["error", 2],
+    "max-len": ["error", 120, {"ignoreUrls": true}],
+    "no-duplicate-imports": ["error", {"includeExports": true}],
+    "no-multiple-empty-lines": ["error", {"max": 2, "maxBOF": 0, "maxEOF": 0}],
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "all",
+        "argsIgnorePattern": "^_",
+        "caughtErrors": "all",
+        "caughtErrorsIgnorePattern": "^ignored",
+        "destructuredArrayIgnorePattern": "^_",
+        "ignoreRestSiblings": true,
+        "vars": "all"
+      }
+    ],
+    "quotes": ["error", "single"],
+    "semi": ["error", "always"],
+    "sort-imports": [
+      "error",
+      {
+        "ignoreCase": true,
+        "ignoreDeclarationSort": true
+      }
+    ],
+    "sort-keys": ["error", "asc", {"allowLineSeparatedGroups": true, "caseSensitive": false}]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.[cm]js"]
+    },
+    {
+      "files": ["src/**/*.ts"],
+      "extends": [
+        "eslint:recommended",
+        "plugin:@typescript-eslint/recommended",
+        "plugin:import/typescript"
+      ],
+      "plugins": [
+        "@typescript-eslint"
+      ],
+      "parser": "@typescript-eslint/parser",
+      "parserOptions": {
+        "project": [
+          "./src/bin/tsconfig.json",
+          "./src/lib/tsconfig.json",
+          "./src/test/unit/tsconfig.json",
+          "./src/test/e2e/tsconfig.json"
+        ]
+      },
+      "settings": {
+        "import/parsers": {
+          "@typescript-eslint/parser": [".ts"]
+        },
+        "import/resolver": {
+          "typescript": {
+            "alwaysTryTypes": true
+          }
+        }
+      },
+      "rules": {
+        "@typescript-eslint/no-unused-vars": [
+          "error",
+          {
+            "args": "all",
+            "argsIgnorePattern": "^_",
+            "caughtErrors": "all",
+            "caughtErrorsIgnorePattern": "^_",
+            "destructuredArrayIgnorePattern": "^_",
+            "varsIgnorePattern": "^_",
+            "ignoreRestSiblings": true
+          }
+        ],
+        "import/group-exports": "off"
+      }
+    },
+    {
+      "files": ["src/test/**"],
+      "extends": [
+        "plugin:jasmine/recommended"
+      ],
+      "plugins": [
+        "jasmine"
+      ],
+      "rules": {
+        "jasmine/new-line-before-expect": "off",
+        "jasmine/no-spec-dupes": ["warn", "branch"],
+        "jasmine/no-suite-dupes": ["warn", "branch"],
+        "max-classes-per-file": ["error", 4]
+      }
+    }
+  ]
+}

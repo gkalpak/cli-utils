@@ -1,6 +1,11 @@
+/* eslint-disable import/no-namespace */
+import * as childProcess from 'node:child_process';
+import {Writable} from 'node:stream';
+
 import * as chalk from 'chalk';
-import * as childProcess from 'child_process';
-import {Writable} from 'stream';
+
+
+/* eslint-enable import/no-namespace */
 import {commandUtils, IRunConfig} from '../../lib/command-utils';
 import {internalUtils} from '../../lib/internal-utils';
 import {processUtils} from '../../lib/process-utils';
@@ -9,7 +14,7 @@ import {reversePromise, tickAsPromised} from '../test-utils';
 
 describe('runner', () => {
   describe('.expandCmd()', () => {
-    const expandCmd: typeof commandUtils.expandCmd = commandUtils.expandCmd.bind(commandUtils);
+    const expandCmd = commandUtils.expandCmd.bind(commandUtils);
     let cmd: string;
     let runtimeArgs: string[];
     let config: IRunConfig;
@@ -17,7 +22,7 @@ describe('runner', () => {
     beforeEach(() => {
       cmd = 'foo --bar';
       runtimeArgs = ['baz', '"q u x"'];
-      config = {quux: 'quuux'} as any;
+      config = {quux: 'quuux'} as IRunConfig;
     });
 
     it('should be a function', () => {
@@ -178,7 +183,7 @@ describe('runner', () => {
       });
 
       it('should treat empty output as non-specified value', async () => {
-        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(''));
+        cuSpawnAsPromisedSpy.and.resolveTo('');
 
         cmd = 'foo ${3:::three} --bar ${4:::four}';
         const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
@@ -188,7 +193,7 @@ describe('runner', () => {
 
       it('should trim the fallback command output (including cursor move ANSI escape sequences)', async () => {
         const output = ' \n\u001b[1a\r\u001B[987B\t {{test}} \t\u001b[23C\r\u001B[00d\n ';
-        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(output));
+        cuSpawnAsPromisedSpy.and.resolveTo(output);
 
         cmd = 'foo ${3:::three} --bar ${4:::four}';
         const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
@@ -210,22 +215,7 @@ describe('runner', () => {
       });
 
       it('should support setting `returnOutput: n` (with the special `--gkcu-returnOutput=n` syntax)', async () => {
-        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve('.\n'.repeat(50)));
-        cmd = 'foo ${3:::three --gkcu-returnOutput=33}';
-        config.returnOutput = false;
-
-        const expandedCmd = await expandCmd(cmd, runtimeArgs, config);
-
-        expect(expandedCmd).toBe(`foo ${'.\n'.repeat(33).trim()}`);
-        expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith('three', jasmine.objectContaining({
-          quux: 'quuux',
-          returnOutput: Infinity,
-        }));
-        expect(config.returnOutput).toBe(false);
-      });
-
-      it('should support setting `returnOutput: n` (with the special `--gkcu-returnOutput=n` syntax)', async () => {
-        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve('.\n'.repeat(50)));
+        cuSpawnAsPromisedSpy.and.resolveTo('.\n'.repeat(50));
         cmd = 'foo ${3:::three --gkcu-returnOutput=33}';
         config.returnOutput = false;
 
@@ -242,7 +232,7 @@ describe('runner', () => {
       it('should correctly handle occurrences of a fallback command with different `returnOutput` values', async () => {
         const dots = (count: number) => '.\n'.repeat(count).trim();
 
-        cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(dots(10)));
+        cuSpawnAsPromisedSpy.and.resolveTo(dots(10));
         cmd = 'foo ${3:::three} ${3:::three --gkcu-returnOutput=4} ${3:::three --gkcu-returnOutput=2}';
         config.returnOutput = false;
 
@@ -312,7 +302,7 @@ describe('runner', () => {
   });
 
   describe('.preprocessArgs()', () => {
-    const preprocessArgs: typeof commandUtils.preprocessArgs = commandUtils.preprocessArgs.bind(commandUtils);
+    const preprocessArgs = commandUtils.preprocessArgs.bind(commandUtils);
 
     it('should be a function', () => {
       expect(preprocessArgs).toEqual(jasmine.any(Function));
@@ -320,67 +310,67 @@ describe('runner', () => {
 
     it('should return an object with `args` and `config` properties', () => {
       const rawArgs: string[] = [];
-      const result: ReturnType<typeof preprocessArgs> = jasmine.objectContaining({
+      const result = jasmine.objectContaining<ReturnType<typeof preprocessArgs>>({
         args: jasmine.any(Array),
         config: jasmine.any(Object),
-      }) as any;
+      });
 
       expect(preprocessArgs(rawArgs)).toEqual(result);
     });
 
     it('should quote arguments with spaces', () => {
       const rawArgs = ['foo', 'bar baz', 'qux'];
-      const result: ReturnType<typeof preprocessArgs> = jasmine.objectContaining({
+      const result = jasmine.objectContaining<ReturnType<typeof preprocessArgs>>({
         args: ['foo', '"bar baz"', 'qux'],
         config: jasmine.any(Object),
-      }) as any;
+      });
 
       expect(preprocessArgs(rawArgs)).toEqual(result);
     });
 
     it('should remove `--gkcu-`-prefixed arguments', () => {
       const rawArgs = ['foo', '--gkcu-bar', 'baz', '--gkcu-qux'];
-      const result: ReturnType<typeof preprocessArgs> = jasmine.objectContaining({
+      const result = jasmine.objectContaining<ReturnType<typeof preprocessArgs>>({
         args: ['foo', 'baz'],
         config: jasmine.any(Object),
-      }) as any;
+      });
 
       expect(preprocessArgs(rawArgs)).toEqual(result);
     });
 
     it('should use `--gkcu-`-prefixed arguments to populate `config`', () => {
       const rawArgs = ['foo', '--gkcu-bar', 'baz', '--gkcu-qux'];
-      const result: ReturnType<typeof preprocessArgs> = jasmine.objectContaining({
+      const result = jasmine.objectContaining<ReturnType<typeof preprocessArgs>>({
         args: jasmine.any(Array),
-        config: {bar: true, qux: true},
-      }) as any;
+        config: {bar: true, qux: true} as IRunConfig,
+      });
 
       expect(preprocessArgs(rawArgs)).toEqual(result);
     });
 
     it('should extract values from `--gkcu-`-prefixed arguments', () => {
       const rawArgs = ['foo', '--gkcu-bar=bar-value', 'baz', '--gkcu-qux=qux-value'];
-      const result: ReturnType<typeof preprocessArgs> = jasmine.objectContaining({
+      const result = jasmine.objectContaining<ReturnType<typeof preprocessArgs>>({
         args: jasmine.any(Array),
-        config: {bar: 'bar-value', qux: 'qux-value'},
-      }) as any;
+        config: {bar: 'bar-value', qux: 'qux-value'} as IRunConfig,
+      });
 
       expect(preprocessArgs(rawArgs)).toEqual(result);
     });
 
     it('should extract convert numeric `--gkcu-`-prefixed argument values to numbers', () => {
       const rawArgs = ['foo', '--gkcu-bar=42', 'baz', '--gkcu-qux=1337'];
-      const result: ReturnType<typeof preprocessArgs> = jasmine.objectContaining({
+      const result = jasmine.objectContaining<ReturnType<typeof preprocessArgs>>({
         args: jasmine.any(Array),
-        config: {bar: 42, qux: 1337},
-      }) as any;
+        config: {bar: 42, qux: 1337} as IRunConfig,
+      });
 
       expect(preprocessArgs(rawArgs)).toEqual(result);
     });
   });
 
   describe('.run()', () => {
-    const run: typeof commandUtils.run = commandUtils.run.bind(commandUtils);
+    const run = commandUtils.run.bind(commandUtils);
     let cmd: string;
     let runtimeArgs: string[];
     let config: IRunConfig;
@@ -390,11 +380,11 @@ describe('runner', () => {
     beforeEach(() => {
       cmd = 'foo --bar';
       runtimeArgs = ['baz', '--qux'];
-      config = {quux: 'quuux'} as any;
+      config = {quux: 'quuux'} as IRunConfig;
 
       cuExpandCmdSpy = spyOn(commandUtils, 'expandCmd').and.
         callFake((rawCmd: string) => Promise.resolve(`expanded:${rawCmd}`));
-      cuSpawnAsPromisedSpy = spyOn(commandUtils, 'spawnAsPromised').and.returnValue(Promise.resolve(''));
+      cuSpawnAsPromisedSpy = spyOn(commandUtils, 'spawnAsPromised').and.resolveTo('');
     });
 
     it('should be a function', () => {
@@ -442,7 +432,7 @@ describe('runner', () => {
 
     it('should pass errors to `utils.onError()`', async () => {
       cuExpandCmdSpy.and.returnValues(Promise.reject('expandCmd error'), Promise.resolve(''));
-      cuSpawnAsPromisedSpy.and.returnValue(Promise.reject('spawnAsPromised error'));
+      cuSpawnAsPromisedSpy.and.rejectWith('spawnAsPromised error');
 
       const rejections = await Promise.all([
         reversePromise(run(cmd, runtimeArgs, config)),
@@ -456,9 +446,9 @@ describe('runner', () => {
   });
 
   describe('.spawnAsPromised()', () => {
-    const spawnAsPromised: typeof commandUtils.spawnAsPromised = commandUtils.spawnAsPromised.bind(commandUtils);
+    const spawnAsPromised = commandUtils.spawnAsPromised.bind(commandUtils);
     const createMockProcess = (jsmn: typeof jasmine) =>
-      Object.assign(new (childProcess as any).ChildProcess(), {
+      Object.assign(new childProcess.ChildProcess(), {
         stdin: {},
         stdout: {pipe: jsmn.createSpy('mockProcess.stdout.pipe')},
       }) as childProcess.ChildProcessWithoutNullStreams;
@@ -476,7 +466,7 @@ describe('runner', () => {
     };
     let spawned: childProcess.ChildProcessWithoutNullStreams[];
     let autoExitSpawned: boolean;
-    let anyObj: jasmine.AsymmetricMatcher<any>;
+    let anyObj: jasmine.AsymmetricMatcher<unknown>;
     let rawCmd: string;
     let config: IRunConfig;
     let cpSpawnSpy: jasmine.Spy;
@@ -497,7 +487,7 @@ describe('runner', () => {
           Promise.resolve().then(() => proc.emit('exit', 0));
         }
 
-        return proc as any;
+        return proc as any; // eslint-disable-line @typescript-eslint/no-explicit-any
       });
 
       cancelCleanUpSpy = jasmine.createSpy('cancelCleanUp');
@@ -569,7 +559,7 @@ describe('runner', () => {
 
         it('should be rejected if a spawned process exits with error (single command)', async () => {
           const promise = reversePromise(spawnAsPromised(rawCmd, config));
-          spawned[0].emit('exit', 1);
+          spawned[0]?.emit('exit', 1);
 
           expect(await promise).toBe(1);
           expectToHaveCleanedUp();
@@ -577,7 +567,7 @@ describe('runner', () => {
 
         it('should be rejected if a spawned process errors (single command)', async () => {
           const promise = reversePromise(spawnAsPromised(rawCmd, config));
-          spawned[0].emit('error', 'Test');
+          spawned[0]?.emit('error', 'Test');
 
           expect(await promise).toBe('Test');
           expectToHaveCleanedUp();
@@ -593,7 +583,7 @@ describe('runner', () => {
           expect(resolved).not.toHaveBeenCalled();
           expectNotToHaveCleanedUp();
 
-          spawned[0].emit('exit', 0);
+          spawned[0]?.emit('exit', 0);
           expect(resolved).not.toHaveBeenCalled();
           expectNotToHaveCleanedUp();
 
@@ -608,14 +598,14 @@ describe('runner', () => {
 
           spawnAsPromised(rawCmd, {returnOutput: 2}).then(resolved);
 
-          expect(spawned[0].stdout.pipe).toHaveBeenCalledTimes(1);
+          expect(spawned[0]?.stdout.pipe).toHaveBeenCalledTimes(1);
 
-          const dataCapturingStream: Writable = (spawned[0].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0];
+          const dataCapturingStream: Writable = (spawned[0]?.stdout.pipe as jasmine.Spy).calls.argsFor(0)[0];
           dataCapturingStream.emit('data', Buffer.from('  foo  '));
           dataCapturingStream.emit('data', Buffer.from('  \n  bar  \n  '));
           dataCapturingStream.emit('data', Buffer.from('  baz  \n  '));
           dataCapturingStream.emit('data', Buffer.from('  qux  \n  '));
-          spawned[0].emit('exit', 0);
+          spawned[0]?.emit('exit', 0);
           await tickAsPromised();
 
           expect(resolved).toHaveBeenCalledWith('baz  \n    qux');
@@ -624,7 +614,7 @@ describe('runner', () => {
     }));
 
     // With `sapVersion: 1`:
-    describe(`v1`, () => {
+    describe('v1', () => {
       beforeEach(() => config.sapVersion = 1);
 
       it('should spawn a process for the specified command', async () => {
@@ -654,9 +644,9 @@ describe('runner', () => {
         expect(cpSpawnSpy.calls.argsFor(2)).toEqual(['"baz"', ['qux'], anyObj]);
         expect(cpSpawnSpy.calls.argsFor(3)).toEqual(['qux', ['"q u u x"'], anyObj]);
 
-        expect((spawned[0].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[1].stdin);
-        expect((spawned[1].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[2].stdin);
-        expect((spawned[2].stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[3].stdin);
+        expect((spawned[0]?.stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[1]?.stdin);
+        expect((spawned[1]?.stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[2]?.stdin);
+        expect((spawned[2]?.stdout.pipe as jasmine.Spy).calls.argsFor(0)[0]).toBe(spawned[3]?.stdin);
       });
 
       it('should use appropriate values for `stdio`', async () => {
@@ -691,9 +681,9 @@ describe('runner', () => {
             reversePromise(spawnAsPromised('foo | bar | baz', config)),
           ]);
 
-          spawned[0].emit('exit', 1);
-          spawned[4].emit('exit', 2);
-          spawned[8].emit('exit', null, 'SIGNAL');
+          spawned[0]?.emit('exit', 1);
+          spawned[4]?.emit('exit', 2);
+          spawned[8]?.emit('exit', null, 'SIGNAL');
 
           expect(await promise).toEqual([1, 2, 'SIGNAL']);
           expectToHaveCleanedUp(3);
@@ -706,9 +696,9 @@ describe('runner', () => {
             reversePromise(spawnAsPromised('foo | bar | baz', config)),
           ]);
 
-          spawned[0].emit('error', 'Test0');
-          spawned[4].emit('error', 'Test1');
-          spawned[8].emit('error', 'Test2');
+          spawned[0]?.emit('error', 'Test0');
+          spawned[4]?.emit('error', 'Test1');
+          spawned[8]?.emit('error', 'Test2');
 
           expect(await promise).toEqual(['Test0', 'Test1', 'Test2']);
           expectToHaveCleanedUp(3);
@@ -721,13 +711,13 @@ describe('runner', () => {
 
           // The promise's success handlers are executed asynchronously.
           await tickAsPromised();
-          spawned[0].emit('exit', 0);
-          spawned[1].emit('exit', 0);
+          spawned[0]?.emit('exit', 0);
+          spawned[1]?.emit('exit', 0);
           expect(resolved).not.toHaveBeenCalled();
           expectNotToHaveCleanedUp();
 
           await tickAsPromised();
-          spawned[2].emit('exit', 0);
+          spawned[2]?.emit('exit', 0);
           expect(resolved).not.toHaveBeenCalled();
           expectNotToHaveCleanedUp();
 
@@ -739,7 +729,7 @@ describe('runner', () => {
     });
 
     // With `sapVersion: 2`:
-    describe(`v2`, () => {
+    describe('v2', () => {
       beforeEach(() => config.sapVersion = 2);
 
       it('should spawn a process for the specified command', async () => {
@@ -766,9 +756,9 @@ describe('runner', () => {
         expect(cpSpawnSpy).toHaveBeenCalledTimes(1);
         expect(cpSpawnSpy.calls.argsFor(0)).toEqual([pipedCmd, [], anyObj]);
 
-        expect(spawned[0].stdout.pipe).not.toHaveBeenCalled();
-        expect(spawned[1].stdout.pipe).not.toHaveBeenCalled();
-        expect(spawned[2].stdout.pipe).not.toHaveBeenCalled();
+        expect(spawned[0]?.stdout.pipe).not.toHaveBeenCalled();
+        expect(spawned[1]?.stdout.pipe).not.toHaveBeenCalled();
+        expect(spawned[2]?.stdout.pipe).not.toHaveBeenCalled();
       });
 
       it('should use appropriate values for `stdio`', async () => {
@@ -777,26 +767,26 @@ describe('runner', () => {
         const expectedStdio1 = ['inherit', 'inherit', 'inherit'];
 
         expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio1);
-        expect(spawned[0].stdout.pipe).not.toHaveBeenCalled();
+        expect(spawned[0]?.stdout.pipe).not.toHaveBeenCalled();
 
         await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', config);
         const expectedStdio2 = ['inherit', 'inherit', 'inherit'];
 
         expect(cpSpawnSpy.calls.argsFor(1)[2].stdio).toEqual(expectedStdio2);
-        expect(spawned[1].stdout.pipe).not.toHaveBeenCalled();
+        expect(spawned[1]?.stdout.pipe).not.toHaveBeenCalled();
 
         // With `returnOutput: true`.
         await spawnAsPromised(rawCmd, {...config, returnOutput: true});
         const expectedStdio3 = ['inherit', 'pipe', 'inherit'];
 
         expect(cpSpawnSpy.calls.argsFor(2)[2].stdio).toEqual(expectedStdio3);
-        expect(spawned[2].stdout.pipe).toHaveBeenCalledTimes(1);
+        expect(spawned[2]?.stdout.pipe).toHaveBeenCalledTimes(1);
 
         await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', {...config, returnOutput: true});
         const expectedStdio4 = ['inherit', 'pipe', 'inherit'];
 
         expect(cpSpawnSpy.calls.argsFor(3)[2].stdio).toEqual(expectedStdio4);
-        expect(spawned[3].stdout.pipe).toHaveBeenCalledTimes(1);
+        expect(spawned[3]?.stdout.pipe).toHaveBeenCalledTimes(1);
       });
     });
   });

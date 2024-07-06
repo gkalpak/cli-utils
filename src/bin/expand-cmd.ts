@@ -49,6 +49,6 @@ if (require.main === module) {
   const {args, config} = commandUtils.preprocessArgs(rawArgs);
 
   commandUtils.
-    expandCmd(cmd, args, config).
+    expandCmd(cmd as string, args, config).
     then(console.log, internalUtils.onError.bind(internalUtils));
 }

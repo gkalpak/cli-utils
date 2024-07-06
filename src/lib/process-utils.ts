@@ -58,11 +58,11 @@ export class ProcessUtils {
     }
 
     // On Windows, suppress the "Terminate batch job (Y/N)?" confirmation.
-    const rl = require('readline');
+    const rl = require('readline'); // eslint-disable-line @typescript-eslint/no-var-requires
     const rlInstance = rl.
       createInterface({input: proc.stdin, output: proc.stdout}).
       on('SIGINT', () => {
-        const {exec} = require('child_process');
+        const {exec} = require('child_process'); // eslint-disable-line @typescript-eslint/no-var-requires
         exec(`taskkill /F /PID ${proc.pid} /T`);
       });
 

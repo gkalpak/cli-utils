@@ -1,3 +1,4 @@
+/// <reference types="jasmine" />
 import {commandUtils, IRunConfig} from './command-utils';
 
 
@@ -94,6 +95,7 @@ export class TestingUtils {
   }
 
   private stripCleanUpCharacters(str: string): string {
+    // eslint-disable-next-line no-control-regex
     return str.replace(/\u001b\[(?:0m|\?25h)/gi, '');
   }
 }

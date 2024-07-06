@@ -1,6 +1,10 @@
-import * as childProcess from 'child_process';
-import {EventEmitter} from 'events';
-import * as rl from 'readline';
+/* eslint-disable import/no-namespace */
+import * as childProcess from 'node:child_process';
+import {EventEmitter} from 'node:events';
+import * as rl from 'node:readline';
+
+
+/* eslint-enable import/no-namespace */
 import {internalUtils} from '../../lib/internal-utils';
 import {processUtils} from '../../lib/process-utils';
 import {tickAsPromised} from '../test-utils';
@@ -8,16 +12,17 @@ import {tickAsPromised} from '../test-utils';
 
 describe('process-utils', () => {
   describe('.doOnExit()', () => {
-    const doOnExit: typeof processUtils.doOnExit = processUtils.doOnExit.bind(processUtils);
+    const doOnExit = processUtils.doOnExit.bind(processUtils);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const emit = (event: string, code?: number) => mockProc.emit(event as any, code as any);
     let mockProc: NodeJS.Process;
-    let mockProcExitSpy: jasmine.Spy;
+    let mockProcExitSpy: jasmine.Spy<NodeJS.Process['exit']>;
     let mockActionSpy: jasmine.Spy;
     let cancelFn: ReturnType<typeof doOnExit>;
 
     beforeEach(() => {
-      mockProc = new EventEmitter() as any;
-      mockProcExitSpy = (mockProc as any).exit = jasmine.createSpy('mockProc.exit');
+      mockProc = new EventEmitter() as unknown as NodeJS.Process;
+      mockProc.exit = mockProcExitSpy = jasmine.createSpy('mockProc.exit');
       mockActionSpy = jasmine.createSpy('mockAction');
 
       cancelFn = doOnExit(mockProc, mockActionSpy);
@@ -28,11 +33,11 @@ describe('process-utils', () => {
     });
 
     it('should throw if no process specified', () => {
-      expect(() => (doOnExit as any)()).toThrowError('No process specified.');
+      expect(() => (doOnExit as () => never)()).toThrowError('No process specified.');
     });
 
     it('should throw if no action specified', () => {
-      expect(() => (doOnExit as any)(mockProc)).toThrowError('No action specified.');
+      expect(() => (doOnExit as (proc: NodeJS.Process) => never)(mockProc)).toThrowError('No action specified.');
     });
 
     it('should take action on `SIGINT`', () => {
@@ -70,7 +75,7 @@ describe('process-utils', () => {
     });
 
     it('should exit the process (after taking action)', () => {
-      mockProcExitSpy.and.callFake(() => expect(mockActionSpy).toHaveBeenCalledTimes(1));
+      mockProcExitSpy.and.callFake(() => expect(mockActionSpy).toHaveBeenCalledTimes(1) as unknown as never);
       mockActionSpy.and.callFake(() => expect(mockProcExitSpy).not.toHaveBeenCalled());
 
       emit('SIGINT');
@@ -104,8 +109,7 @@ describe('process-utils', () => {
   });
 
   describe('.suppressTerminateBatchJobConfirmation()', () => {
-    const suppressTerminateBatchJobConfirmation: typeof processUtils.suppressTerminateBatchJobConfirmation =
-      processUtils.suppressTerminateBatchJobConfirmation.bind(processUtils);
+    const suppressTerminateBatchJobConfirmation = processUtils.suppressTerminateBatchJobConfirmation.bind(processUtils);
     let mockProc: NodeJS.Process;
     let mockRlInstance: ReturnType<typeof rl.createInterface>;
     let createInterfaceSpy: jasmine.Spy;
@@ -117,11 +121,11 @@ describe('process-utils', () => {
         platform: 'win32',
         stdin: {},
         stdout: {},
-      } as any;
+      } as NodeJS.Process;
 
       mockRlInstance = Object.assign(new EventEmitter(), {
         close: jasmine.createSpy('mockRlInstance.close'),
-      }) as any;
+      }) as unknown as rl.Interface;
 
       createInterfaceSpy = spyOn(rl, 'createInterface').and.returnValue(mockRlInstance);
       execSpy = spyOn(childProcess, 'exec');

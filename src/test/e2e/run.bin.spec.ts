@@ -1,4 +1,5 @@
-import {join} from 'path';
+import {join} from 'node:path';
+
 import {testingUtils} from '../../lib/testing-utils';
 import {IS_WINDOWS, reversePromise, ROOT_DIR} from '../test-utils';
 
@@ -98,16 +99,16 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     // debug
     let result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
     expect(unescapeDollars(result)).toBe(
-      '[debug] Input command: \'echo baz\'\n' +
-      '[debug] Expanded command: \'echo baz\'\n' +
-      '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
-      '[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)\n' +
-      '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
-      '[debug] Expanded command: \'echo foo bar baz\'\n' +
-      '[debug]   Running 1/1: \'echo\', \'foo, bar, baz\'\n' +
-      '[debug]     (sapVersion: 1, stdio: inherit, inherit, inherit)\n' +
-      'foo bar baz\n' +
-      '[debug]   Reseting the output and cursor styles.');
+        '[debug] Input command: \'echo baz\'\n' +
+        '[debug] Expanded command: \'echo baz\'\n' +
+        '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
+        '[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)\n' +
+        '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
+        '[debug] Expanded command: \'echo foo bar baz\'\n' +
+        '[debug]   Running 1/1: \'echo\', \'foo, bar, baz\'\n' +
+        '[debug]     (sapVersion: 1, stdio: inherit, inherit, inherit)\n' +
+        'foo bar baz\n' +
+        '[debug]   Reseting the output and cursor styles.');
 
     // dryrun
     result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-dryrun foo');
@@ -136,16 +137,16 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
     // debug
     let result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug --gkcu-sapVersion=2');
     expect(unescapeDollars(result)).toBe(
-      '[debug] Input command: \'echo baz\'\n' +
-      '[debug] Expanded command: \'echo baz\'\n' +
-      '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
-      '[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)\n' +
-      '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
-      '[debug] Expanded command: \'echo foo bar baz\'\n' +
-      '[debug]   Running 1/1: \'echo foo bar baz\', \'\'\n' +
-      '[debug]     (sapVersion: 2, stdio: inherit, inherit, inherit)\n' +
-      'foo bar baz\n' +
-      '[debug]   Reseting the output and cursor styles.');
+        '[debug] Input command: \'echo baz\'\n' +
+        '[debug] Expanded command: \'echo baz\'\n' +
+        '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
+        '[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)\n' +
+        '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
+        '[debug] Expanded command: \'echo foo bar baz\'\n' +
+        '[debug]   Running 1/1: \'echo foo bar baz\', \'\'\n' +
+        '[debug]     (sapVersion: 2, stdio: inherit, inherit, inherit)\n' +
+        'foo bar baz\n' +
+        '[debug]   Reseting the output and cursor styles.');
 
     // dryrun
     result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-sapVersion=2 --gkcu-dryrun foo');
@@ -153,12 +154,12 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
 
     // returnOutput
     result = await runCmd(
-      '"node -p \\"\'$1\\n\\${2:bar}\\n${3:::echo baz}\'\\"" foo --gkcu-returnOutput --gkcu-sapVersion=2');
+        '"node -p \\"\'$1\\n\\${2:bar}\\n${3:::echo baz}\'\\"" foo --gkcu-returnOutput --gkcu-sapVersion=2');
     expect(result).toBe('');
 
     // returnOutput=n
     result = await runCmd(
-      '"node -p \\"\'$1\\n\\${2:bar}\\n${3:::echo baz}\'\\"" --gkcu-sapVersion=2 --gkcu-returnOutput=2 foo');
+        '"node -p \\"\'$1\\n\\${2:bar}\\n${3:::echo baz}\'\\"" --gkcu-sapVersion=2 --gkcu-returnOutput=2 foo');
     expect(result).toBe('foo\nbar\nbaz');
 
     // returnOutput=n in sub-command

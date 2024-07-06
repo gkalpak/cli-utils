@@ -5,7 +5,7 @@ import {reversePromise} from '../test-utils';
 
 describe('testing-utils', () => {
   describe('.testCmd()', () => {
-    const testCmd: typeof testingUtils.testCmd = testingUtils.testCmd.bind(testingUtils);
+    const testCmd = testingUtils.testCmd.bind(testingUtils);
     let cuSpawnAsPromisedSpy: jasmine.Spy;
 
     beforeEach(() => {
@@ -57,7 +57,7 @@ describe('testing-utils', () => {
     it('should strip clean-up characters from the output', async () => {
       const originalOutput = '1 \u001b[0m 2 \u001b[?25h 3 \u001B[?25H 4 \u001B[0M 5';
       const expectedOutput = '1  2  3  4  5';
-      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.resolveTo(originalOutput);
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
@@ -65,7 +65,7 @@ describe('testing-utils', () => {
     it('should normalize newlines to `\n`', async () => {
       const originalOutput = '1\r\n2\n3\r\n4\r5';
       const expectedOutput = '1\n2\n3\n4\n5';
-      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.resolveTo(originalOutput);
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
@@ -73,7 +73,7 @@ describe('testing-utils', () => {
     it('should trim the output', async () => {
       const originalOutput = ' \t\r\n 1 2 3 4 5 \t \r \n ';
       const expectedOutput = '1 2 3 4 5';
-      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.resolveTo(originalOutput);
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
@@ -81,14 +81,14 @@ describe('testing-utils', () => {
     it('should trim the output after stripping clean-up characters', async () => {
       const originalOutput = '  \u001b[0m  \u001b[?25h  1 2 3 4 5  \u001b[?25h  \u001b[0m  ';
       const expectedOutput = '1 2 3 4 5';
-      cuSpawnAsPromisedSpy.and.returnValue(Promise.resolve(originalOutput));
+      cuSpawnAsPromisedSpy.and.resolveTo(originalOutput);
 
       expect(await testCmd('foo')).toBe(expectedOutput);
     });
   });
 
   describe('.testScriptFactory()', () => {
-    const testScriptFactory: typeof testingUtils.testScriptFactory = testingUtils.testScriptFactory.bind(testingUtils);
+    const testScriptFactory = testingUtils.testScriptFactory.bind(testingUtils);
 
     it('should be a function', () => {
       expect(testScriptFactory).toEqual(jasmine.any(Function));
@@ -141,8 +141,7 @@ describe('testing-utils', () => {
   });
 
   describe('.withJasmineTimeout()', () => {
-    const withJasmineTimeout: typeof testingUtils.withJasmineTimeout =
-      testingUtils.withJasmineTimeout.bind(testingUtils);
+    const withJasmineTimeout = testingUtils.withJasmineTimeout.bind(testingUtils);
 
     it('should be a function', () => {
       expect(withJasmineTimeout).toEqual(jasmine.any(Function));

@@ -2,10 +2,13 @@
 'use strict';
 
 // Imports
+const {existsSync} = require('node:fs');
+const {resolve} = require('node:path');
+const {exit} = require('node:process');
+
 const {green, red} = require('chalk');
-const {existsSync} = require('fs');
-const {resolve} = require('path');
-const {bin, main, types, typings} = require('../package.json');
+
+const {bin, main, types} = require('../package.json');
 
 // Constants
 const CHECK_MARK = green('\u2714');
@@ -17,21 +20,20 @@ _main();
 
 // Function - Definitions
 function _main() {
-  checkBin(bin || {}, ROOT_DIR);
-  checkFile('main', main || '', ROOT_DIR);
-  checkFile('types', types || '', ROOT_DIR);
-  checkFile('typings', typings || '', ROOT_DIR);
+  checkBin(bin, ROOT_DIR);
+  checkFile('main', main, ROOT_DIR);
+  checkFile('types', types, ROOT_DIR);
 }
 
 function checkBin(bin, rootDir) {
-  const missingScripts = Object.keys(bin).
-    map(key => resolve(rootDir, bin[key])).
+  const missingScripts = Object.values(bin).
+    map(scriptPath => resolve(rootDir, scriptPath)).
     filter(path => !existsSync(path));
 
   reportResults(
-    'All scripts mentioned in `package.json > bin` exist.',
-    'Some scripts mentioned in `package.json > bin` are missing.',
-    {'Missing scripts': missingScripts});
+      'All scripts mentioned in `package.json > bin` exist.',
+      'Some scripts mentioned in `package.json > bin` are missing.',
+      {'Missing scripts': missingScripts});
 }
 
 function checkFile(propName, filePath, rootDir) {
@@ -40,13 +42,13 @@ function checkFile(propName, filePath, rootDir) {
   const missingFile = !existsSync(resolve(rootDir, filePath));
 
   reportResults(
-    `The file mentioned in \`package.json > ${propName}\` exists.`,
-    `The file mentioned in \`package.json > ${propName}\` is missing.`,
-    {'Missing script': missingFile ? [filePath] : []});
+      `The file mentioned in \`package.json > ${propName}\` exists.`,
+      `The file mentioned in \`package.json > ${propName}\` is missing.`,
+      {'Missing script': missingFile ? [filePath] : []});
 }
 
 function reportResults(successMessage, errorMessage, errors) {
-  const errorHeaders = Object.keys(errors).filter(header => errors[header].length);
+  const errorHeaders = Object.values(errors).filter(msg => msg.length);
 
   if (!errorHeaders.length) {
     console.log(`${CHECK_MARK}  ${successMessage}`);
@@ -65,6 +67,6 @@ function reportResults(successMessage, errorMessage, errors) {
     console.error(errorDetails);
     console.error();
 
-    process.exit(1);
+    exit(1);
   }
 }

@@ -1,4 +1,5 @@
-import {join} from 'path';
+import {join} from 'node:path';
+
 import {testingUtils} from '../../lib/testing-utils';
 import {IS_WINDOWS, reversePromise, ROOT_DIR} from '../test-utils';
 
@@ -71,11 +72,11 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
     // debug
     let result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
     expect(result).toBe(
-      '[debug] Input command: \'echo baz\'\n' +
-      '[debug] Expanded command: \'echo baz\'\n' +
-      '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
-      '[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)\n' +
-      'echo foo bar baz');
+        '[debug] Input command: \'echo baz\'\n' +
+        '[debug] Expanded command: \'echo baz\'\n' +
+        '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
+        '[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)\n' +
+        'echo foo bar baz');
 
     // dryrun
     result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-dryrun foo');
@@ -97,11 +98,11 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
     // debug
     let result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug --gkcu-sapVersion=2');
     expect(result).toBe(
-      '[debug] Input command: \'echo baz\'\n' +
-      '[debug] Expanded command: \'echo baz\'\n' +
-      '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
-      '[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)\n' +
-      'echo foo bar baz');
+        '[debug] Input command: \'echo baz\'\n' +
+        '[debug] Expanded command: \'echo baz\'\n' +
+        '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
+        '[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)\n' +
+        'echo foo bar baz');
 
     // dryrun
     result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-sapVersion=2 --gkcu-dryrun foo');

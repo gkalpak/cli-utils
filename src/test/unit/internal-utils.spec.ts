@@ -1,12 +1,15 @@
+/* eslint-disable import/no-namespace */
 import * as chalk from 'chalk';
+
+
+/* eslint-enable import/no-namespace */
 import {internalUtils} from '../../lib/internal-utils';
 import {reversePromise, tickAsPromised} from '../test-utils';
 
 
 describe('internal-utils', () => {
   describe('.finallyAsPromised()', () => {
-    const finallyAsPromised =
-      internalUtils.finallyAsPromised.bind(internalUtils) as typeof internalUtils.finallyAsPromised;
+    const finallyAsPromised = internalUtils.finallyAsPromised.bind(internalUtils);
     let callback: jasmine.Spy;
 
     beforeEach(() => callback = jasmine.createSpy('callback'));
@@ -50,7 +53,7 @@ describe('internal-utils', () => {
 
       it('should ignore the resolved value of callback (if it returns a promise)', async () => {
         const promise = Promise.resolve('foo');
-        callback.and.returnValue(Promise.resolve('bar'));
+        callback.and.resolveTo('bar');
 
         const val = await finallyAsPromised(promise, callback);
 
@@ -107,7 +110,7 @@ describe('internal-utils', () => {
 
       it('should ignore the resolved value of callback (if it returns a promise)', async () => {
         const promise = Promise.reject('foo');
-        callback.and.returnValue(Promise.resolve('bar'));
+        callback.and.resolveTo('bar');
 
         const err = await reversePromise(finallyAsPromised(promise, callback));
 
@@ -135,7 +138,7 @@ describe('internal-utils', () => {
   });
 
   describe('.noop()', () => {
-    const noop: typeof internalUtils.noop = internalUtils.noop.bind(internalUtils);
+    const noop = internalUtils.noop.bind(internalUtils);
 
     it('should be a function', () => {
       expect(noop).toEqual(jasmine.any(Function));
@@ -148,7 +151,7 @@ describe('internal-utils', () => {
   });
 
   describe('.onError()', () => {
-    const onError: typeof internalUtils.onError = internalUtils.onError.bind(internalUtils);
+    const onError = internalUtils.onError.bind(internalUtils);
     let consoleErrorSpy: jasmine.Spy;
     let processExitSpy: jasmine.Spy;
 

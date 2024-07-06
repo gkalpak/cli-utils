@@ -52,6 +52,6 @@ if (require.main === module) {
   const {args, config} = commandUtils.preprocessArgs(rawArgs);
 
   commandUtils.
-    run(cmd, args, config).
+    run(cmd as string, args, config).
     catch(internalUtils.onError.bind(internalUtils));
 }
