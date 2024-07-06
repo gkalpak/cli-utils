@@ -191,8 +191,8 @@ describe('runner', () => {
         expect(expandedCmd).toBe('foo --bar');
       });
 
-      it('should trim the fallback command output (including cursor move ANSI escape sequences)', async () => {
-        const output = ' \n\u001b[1a\r\u001B[987B\t {{test}} \t\u001b[23C\r\u001B[00d\n ';
+      it('should trim the fallback command output (including certain ANSI escape sequences)', async () => {
+        const output = ' \n\u001b[1a\r\u001B[987B\t {{test}} \t\u001b[23C\r\u001B[00d\n \u001b[0m  \u001b[?25H\n ';
         cuSpawnAsPromisedSpy.and.resolveTo(output);
 
         cmd = 'foo ${3:::three} --bar ${4:::four}';

@@ -144,7 +144,7 @@ export class CommandUtils {
       const returnOutput = hasNumericReturnOutput ? Infinity : true;
       const runConfig: IRunConfig = Object.assign({}, config, {returnOutput});
 
-      const subCmdPromise = this.run(subCmd, runtimeArgs, runConfig).then(result => this.trimOutput(result));
+      const subCmdPromise = this.run(subCmd, runtimeArgs, runConfig).then(result => this.cleanUpOutput(result));
       const replPromises = infoList.map(info => subCmdPromise.then(result => {
         // Retrieve the part of the output that this sub-command cares about.
         const value = (typeof info.returnOutput === 'number') ? this.getLastLines(result, info.returnOutput) : result;
@@ -410,8 +410,9 @@ export class CommandUtils {
     this.insertAfter(tokens, 'echo', '||');
   }
 
-  private trimOutput(str: string): string {
-    return str.
+  private cleanUpOutput(str: string): string {
+    return internalUtils.
+      stripOutputStyleResetSequences(str).
       replace(internalUtils.escapeSeqRes.moveCursor, '').
       trim();
   }
