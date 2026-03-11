@@ -24,7 +24,7 @@ export class InternalUtils {
   }
 
   public onError(err?: Error | string | number): void {
-    const {red} = require('chalk'); // eslint-disable-line @typescript-eslint/no-var-requires
+    const {red} = require('chalk').default; // eslint-disable-line @typescript-eslint/no-require-imports
 
     const isExitCode = !!err && (typeof err === 'number');
     const errorMsg = (err instanceof Error) ?

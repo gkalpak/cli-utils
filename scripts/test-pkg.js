@@ -6,9 +6,10 @@ const {existsSync} = require('node:fs');
 const {resolve} = require('node:path');
 const {exit} = require('node:process');
 
-const {green, red} = require('chalk');
+const {green, red} = require('chalk').default;
 
 const {bin, main, types} = require('../package.json');
+
 
 // Constants
 const CHECK_MARK = green('\u2714');

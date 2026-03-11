@@ -2,7 +2,7 @@
 import * as childProcess from 'node:child_process';
 import {Writable} from 'node:stream';
 
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 
 /* eslint-enable import/no-namespace */
@@ -525,7 +525,7 @@ describe('runner', () => {
     });
 
     // With all `sapVersion`:
-    [1, 2].forEach(sapVersion => describe(`v${sapVersion}`, () => {
+    [1, 2].forEach(sapVersion => describe(`v${sapVersion} (group: 1 of 2)`, () => {
       beforeEach(() => config.sapVersion = sapVersion);
 
       it('should return a promise', async () => {
@@ -614,7 +614,7 @@ describe('runner', () => {
     }));
 
     // With `sapVersion: 1`:
-    describe('v1', () => {
+    describe('v1 (group: 2 of 2)', () => {
       beforeEach(() => config.sapVersion = 1);
 
       it('should spawn a process for the specified command', async () => {
@@ -729,7 +729,7 @@ describe('runner', () => {
     });
 
     // With `sapVersion: 2`:
-    describe('v2', () => {
+    describe('v2 (group: 2 of 2)', () => {
       beforeEach(() => config.sapVersion = 2);
 
       it('should spawn a process for the specified command', async () => {

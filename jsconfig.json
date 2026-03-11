@@ -7,6 +7,7 @@
     "lib": [
       "ES2022",
     ],
+    "maxNodeModuleJsDepth": 0,
     "module": "CommonJS",
     "moduleResolution": "Node",
     "newLine": "lf",

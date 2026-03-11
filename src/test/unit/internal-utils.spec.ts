@@ -1,5 +1,4 @@
-/* eslint-disable import/no-namespace */
-import * as chalk from 'chalk';
+import chalk from 'chalk';
 
 
 /* eslint-enable import/no-namespace */
