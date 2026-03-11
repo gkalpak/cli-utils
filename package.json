@@ -33,7 +33,7 @@
     "~~test-e2e": "jasmine out/test/e2e/**/*.spec.js",
     "~~test-pkg": "node scripts/test-pkg",
     "~~test-unit": "jasmine out/test/unit/**/*.spec.js",
-    "~~test-unit-watch": "watch \"npm run ~~test-unit\" out/ --wait 1",
+    "~~test-unit-watch": "node --watch-path=out/ -- node_modules/jasmine/bin/jasmine out/test/unit/**/*.spec.js",
     "~~typecheck-scripts": "tsc --project jsconfig.json"
   },
   "bin": {
