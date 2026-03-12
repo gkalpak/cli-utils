@@ -1,5 +1,7 @@
 import {join} from 'node:path';
 
+import {gray} from 'picocolors';
+
 import {testingUtils} from '../../lib/testing-utils';
 import {IS_WINDOWS, reversePromise, ROOT_DIR} from '../test-utils';
 
@@ -98,17 +100,18 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
   it('should support `--gkcu-` arguments (sapVersion: 1)', async () => {
     // debug
     let result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
-    expect(unescapeDollars(result)).toBe(
-        '[debug] Input command: \'echo baz\'\n' +
-        '[debug] Expanded command: \'echo baz\'\n' +
-        '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
-        '[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)\n' +
-        '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
-        '[debug] Expanded command: \'echo foo bar baz\'\n' +
-        '[debug]   Running 1/1: \'echo\', \'foo, bar, baz\'\n' +
-        '[debug]     (sapVersion: 1, stdio: inherit, inherit, inherit)\n' +
-        'foo bar baz\n' +
-        '[debug]   Reseting the output and cursor styles.');
+    expect(unescapeDollars(result)).toBe([
+      gray('[debug] Input command: \'echo baz\''),
+      gray('[debug] Expanded command: \'echo baz\''),
+      gray('[debug]   Running 1/1: \'echo\', \'baz\''),
+      gray('[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)'),
+      gray('[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\''),
+      gray('[debug] Expanded command: \'echo foo bar baz\''),
+      gray('[debug]   Running 1/1: \'echo\', \'foo, bar, baz\''),
+      gray('[debug]     (sapVersion: 1, stdio: inherit, inherit, inherit)'),
+      'foo bar baz',
+      gray('[debug]   Reseting the output and cursor styles.'),
+    ].join('\n'));
 
     // dryrun
     result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-dryrun foo');
@@ -136,17 +139,18 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
   it('should support `--gkcu-` arguments (sapVersion: 2)', async () => {
     // debug
     let result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug --gkcu-sapVersion=2');
-    expect(unescapeDollars(result)).toBe(
-        '[debug] Input command: \'echo baz\'\n' +
-        '[debug] Expanded command: \'echo baz\'\n' +
-        '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
-        '[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)\n' +
-        '[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\'\n' +
-        '[debug] Expanded command: \'echo foo bar baz\'\n' +
-        '[debug]   Running 1/1: \'echo foo bar baz\', \'\'\n' +
-        '[debug]     (sapVersion: 2, stdio: inherit, inherit, inherit)\n' +
-        'foo bar baz\n' +
-        '[debug]   Reseting the output and cursor styles.');
+    expect(unescapeDollars(result)).toBe([
+      gray('[debug] Input command: \'echo baz\''),
+      gray('[debug] Expanded command: \'echo baz\''),
+      gray('[debug]   Running 1/1: \'echo baz\', \'\''),
+      gray('[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)'),
+      gray('[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\''),
+      gray('[debug] Expanded command: \'echo foo bar baz\''),
+      gray('[debug]   Running 1/1: \'echo foo bar baz\', \'\''),
+      gray('[debug]     (sapVersion: 2, stdio: inherit, inherit, inherit)'),
+      'foo bar baz',
+      gray('[debug]   Reseting the output and cursor styles.'),
+    ].join('\n'));
 
     // dryrun
     result = await runCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-sapVersion=2 --gkcu-dryrun foo');

@@ -2,7 +2,7 @@
 import * as childProcess from 'node:child_process';
 import {Writable} from 'node:stream';
 
-import chalk from 'chalk';
+import {gray} from 'picocolors';
 
 
 /* eslint-enable import/no-namespace */
@@ -295,8 +295,8 @@ describe('runner', () => {
 
         await expandCmd(cmd, runtimeArgs, {debug: true});
         expect(consoleDebugSpy).toHaveBeenCalledTimes(2);
-        expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray('[debug] Input command: \'three $*\''));
-        expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray('[debug] Expanded command: \'three baz "q u x"\''));
+        expect(consoleDebugSpy).toHaveBeenCalledWith(gray('[debug] Input command: \'three $*\''));
+        expect(consoleDebugSpy).toHaveBeenCalledWith(gray('[debug] Expanded command: \'three baz "q u x"\''));
       });
     });
   });
@@ -426,8 +426,8 @@ describe('runner', () => {
 
       await run(cmd, runtimeArgs, {debug: true});
       expect(consoleDebugSpy).toHaveBeenCalledTimes(2);
-      expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray(`[debug] Input command: '${cmd}'`));
-      expect(consoleDebugSpy).toHaveBeenCalledWith(chalk.gray(`[debug] Expanded command: 'expanded:${cmd}'`));
+      expect(consoleDebugSpy).toHaveBeenCalledWith(gray(`[debug] Input command: '${cmd}'`));
+      expect(consoleDebugSpy).toHaveBeenCalledWith(gray(`[debug] Expanded command: 'expanded:${cmd}'`));
     });
 
     it('should pass errors to `utils.onError()`', async () => {

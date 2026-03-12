@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import {red} from 'picocolors';
 
 
 /* eslint-enable import/no-namespace */
@@ -165,27 +165,27 @@ describe('internal-utils', () => {
 
     it('should log the error (in red)', () => {
       onError('foo');
-      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Error: foo'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(red('Error: foo'));
     });
 
     it('should log the error as exit code if a (non-zero) number', () => {
       onError(42);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Exit code: 42'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(red('Exit code: 42'));
 
       consoleErrorSpy.calls.reset();
 
       onError('42');
-      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Error: 42'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(red('Error: 42'));
 
       consoleErrorSpy.calls.reset();
 
       onError(0);
-      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('Error: 0'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(red('Error: 0'));
     });
 
     it('should log the error\'s stacktrace (in red) if an `Error`', () => {
       onError(Object.assign(new Error('bar'), {stack: 'bar'}));
-      expect(consoleErrorSpy).toHaveBeenCalledWith(chalk.red('bar'));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(red('bar'));
     });
 
     it('should exit the process with 1', () => {

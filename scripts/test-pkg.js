@@ -6,7 +6,7 @@ const {existsSync} = require('node:fs');
 const {resolve} = require('node:path');
 const {exit} = require('node:process');
 
-const {green, red} = require('chalk').default;
+const {green, red} = require('picocolors');
 
 const {bin, main, types} = require('../package.json');
 

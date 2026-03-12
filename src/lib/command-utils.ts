@@ -327,7 +327,7 @@ export class CommandUtils {
 
   // Methods - Private
   private debugMessage(msg: string): void {
-    const {gray} = require('chalk').default; // eslint-disable-line @typescript-eslint/no-require-imports
+    const {gray} = require('picocolors'); // eslint-disable-line @typescript-eslint/no-require-imports
     const formatted = msg.
       split('\n').
       map(line => gray(`[debug] ${line}`)).
