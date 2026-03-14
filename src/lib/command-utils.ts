@@ -1,4 +1,4 @@
-import {spawn, SpawnOptions} from 'node:child_process';
+import {exec, ExecOptions, spawn, SpawnOptions} from 'node:child_process';
 import {PassThrough, Readable} from 'node:stream';
 
 import {internalUtils} from './internal-utils';
@@ -278,19 +278,13 @@ export class CommandUtils {
 
       const pipedCmdSpecs = this.parseRawCmd(rawCmd, sapVersion, dryrun);
 
-      const lastStdout = pipedCmdSpecs.reduce<Readable | null>((prevStdout, cmdSpec, idx, arr) => {
+      const lastStdout = pipedCmdSpecs.reduce<Readable>((prevStdout, cmdSpec, idx, arr) => {
         const isLast = (idx === arr.length - 1);
-        const pipeOutput = !isLast || returnOutput;
 
         const executable = cmdSpec.executable;
         const args = cmdSpec.args;
-        const options: SpawnOptions = {
-          shell: true,
-          stdio: [
-            prevStdout ? 'pipe' : 'inherit',
-            pipeOutput ? 'pipe' : 'inherit',
-            'inherit',
-          ],
+        const options: ExecOptions & SpawnOptions = {
+          stdio: ['pipe', 'pipe', 'inherit'],
         };
 
         if (debug) {
@@ -299,19 +293,26 @@ export class CommandUtils {
               `    (sapVersion: ${sapVersion}, stdio: ${(options.stdio as string[]).join(', ')})`);
         }
 
-        const proc = spawn(executable, args, options).
+        // TODO(gkalpak): Can we relax the condition for `exec()` and ignore `sapVersion`?
+        const proc = ((sapVersion === 2) && (args.length === 0)) ?
+          exec(executable, options) :
+          spawn(executable, args, {...options, shell: true});
+
+        proc.
           on('error', reject).
           on('exit', (code, signal) => {
             if (code !== 0) return reject(code || signal);
             if (isLast) return resolve(getReturnData());
           });
 
-        if (prevStdout) prevStdout.pipe(proc.stdin!);
+        prevStdout.pipe(proc.stdin!);
 
-        return proc.stdout;
-      }, null);
+        return proc.stdout!;
+      }, process.stdin);
 
-      if (returnOutput) {
+      if (!returnOutput) {
+        lastStdout!.pipe(process.stdout);
+      } else {
         const outputStream = new PassThrough();
         outputStream.on('data', d => data += d);
         lastStdout!.pipe(outputStream);

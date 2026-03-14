@@ -77,7 +77,7 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
       gray('[debug] Input command: \'echo baz\''),
       gray('[debug] Expanded command: \'echo baz\''),
       gray('[debug]   Running 1/1: \'echo\', \'baz\''),
-      gray('[debug]     (sapVersion: 1, stdio: inherit, pipe, inherit)'),
+      gray('[debug]     (sapVersion: 1, stdio: pipe, pipe, inherit)'),
       'echo foo bar baz',
     ].join('\n'));
 
@@ -104,7 +104,7 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
       gray('[debug] Input command: \'echo baz\''),
       gray('[debug] Expanded command: \'echo baz\''),
       gray('[debug]   Running 1/1: \'echo baz\', \'\''),
-      gray('[debug]     (sapVersion: 2, stdio: inherit, pipe, inherit)'),
+      gray('[debug]     (sapVersion: 2, stdio: pipe, pipe, inherit)'),
       'echo foo bar baz',
     ].join('\n'));
 
