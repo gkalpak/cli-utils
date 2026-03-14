@@ -284,7 +284,7 @@ export class CommandUtils {
         const executable = cmdSpec.executable;
         const args = cmdSpec.args;
         const options: ExecOptions & SpawnOptions = {
-          stdio: ['pipe', 'pipe', 'inherit'],
+          stdio: [prevStdout, 'pipe', 'inherit'],
         };
 
         if (debug) {
@@ -305,8 +305,6 @@ export class CommandUtils {
             if (isLast) return resolve(getReturnData());
           });
 
-        prevStdout.pipe(proc.stdin!);
-
         return proc.stdout!;
       }, process.stdin);
 
@@ -315,7 +313,7 @@ export class CommandUtils {
       } else {
         const outputStream = new PassThrough();
         outputStream.on('data', d => data += d);
-        lastStdout!.pipe(outputStream);
+        lastStdout.pipe(outputStream);
 
         if (returnOutputSubset) {
           outputStream.pipe(process.stdout);
