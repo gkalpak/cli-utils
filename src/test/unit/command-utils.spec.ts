@@ -730,19 +730,21 @@ describe('runner', () => {
         await spawnAsPromised(rawCmd, {...config, returnOutput: Infinity});
 
         expect(cpSpawnSpy).toHaveBeenCalledTimes(2);
-        expect(cpSpawnSpy.calls.argsFor(0)[2].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
-        expect(cpSpawnSpy.calls.argsFor(1)[2].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
+        expect(cpSpawnSpy.calls.argsFor(0)[2].env).
+          toEqual(jasmine.objectContaining({CLI_WIDTH: `${process.stdout.columns ?? ''}`, FORCE_COLOR: '3'}));
+        expect(cpSpawnSpy.calls.argsFor(1)[2].env).
+          toEqual(jasmine.objectContaining({CLI_WIDTH: `${process.stdout.columns ?? ''}`, FORCE_COLOR: '3'}));
 
         cpSpawnSpy.calls.reset();
 
         // With `returnOutput: <number>` and existing `FORCE_COLOR`.
         const originalEnv = process.env;
         try {
-          process.env = {FORCE_COLOR: '1', OTHER_VAR: 'sure'};
+          process.env = {CLI_WIDTH: '1337', FORCE_COLOR: '1', OTHER_VAR: 'sure'};
           await spawnAsPromised(rawCmd, {...config, returnOutput: 1337});
 
           expect(cpSpawnSpy).toHaveBeenCalledTimes(1);
-          expect(cpSpawnSpy.calls.argsFor(0)[2].env).toEqual({FORCE_COLOR: '1', OTHER_VAR: 'sure'});
+          expect(cpSpawnSpy.calls.argsFor(0)[2].env).toEqual({CLI_WIDTH: '1337', FORCE_COLOR: '1', OTHER_VAR: 'sure'});
         } finally {
           process.env = originalEnv;
         }
@@ -778,21 +780,23 @@ describe('runner', () => {
 
         expect(cpSpawnSpy).toHaveBeenCalledTimes(4);
         expect(cpSpawnSpy.calls.argsFor(0)[1].env).toBe(undefined);
-        expect(cpSpawnSpy.calls.argsFor(1)[1].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
+        expect(cpSpawnSpy.calls.argsFor(1)[1].env).
+          toEqual(jasmine.objectContaining({CLI_WIDTH: `${process.stdout.columns ?? ''}`, FORCE_COLOR: '3'}));
         expect(cpSpawnSpy.calls.argsFor(2)[1].env).toBe(undefined);
-        expect(cpSpawnSpy.calls.argsFor(3)[1].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
+        expect(cpSpawnSpy.calls.argsFor(3)[1].env).
+          toEqual(jasmine.objectContaining({CLI_WIDTH: `${process.stdout.columns ?? ''}`, FORCE_COLOR: '3'}));
 
         cpSpawnSpy.calls.reset();
 
         // With `returnOutput: <number>` and existing `FORCE_COLOR`.
         const originalEnv = process.env;
         try {
-          process.env = {FORCE_COLOR: '1', OTHER_VAR: 'sure'};
+          process.env = {CLI_WIDTH: '1337', FORCE_COLOR: '1', OTHER_VAR: 'sure'};
           await spawnAsPromised(pipedCmd, {...config, returnOutput: 1337});
 
           expect(cpSpawnSpy).toHaveBeenCalledTimes(2);
           expect(cpSpawnSpy.calls.argsFor(0)[1].env).toBe(undefined);
-          expect(cpSpawnSpy.calls.argsFor(1)[1].env).toEqual({FORCE_COLOR: '1', OTHER_VAR: 'sure'});
+          expect(cpSpawnSpy.calls.argsFor(1)[1].env).toEqual({CLI_WIDTH: '1337', FORCE_COLOR: '1', OTHER_VAR: 'sure'});
         } finally {
           process.env = originalEnv;
         }

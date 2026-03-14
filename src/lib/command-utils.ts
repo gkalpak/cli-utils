@@ -288,6 +288,7 @@ export class CommandUtils {
           env: (!isLast || !returnOutputSubset) ?
             undefined :
             {
+              CLI_WIDTH: `${process.stdout.columns ?? ''}`,
               FORCE_COLOR: '3',
               ...process.env,
             },
