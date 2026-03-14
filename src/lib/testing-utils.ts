@@ -33,7 +33,7 @@ export class TestingUtils {
    *     command.
    */
   public async testCmd(cmd: string, config?: IRunConfig): Promise<string> {
-    const result = await commandUtils.spawnAsPromised(cmd, {returnOutput: true, ...config});
+    const result = await commandUtils.spawnAsPromised(cmd, {returnOutput: true, sapVersion: 2, ...config});
     return this.normalizeNewlines(internalUtils.stripOutputStyleResetSequences(result).trim());
   }
 

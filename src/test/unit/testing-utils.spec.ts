@@ -22,7 +22,7 @@ describe('testing-utils', () => {
       const result = await testCmd(cmd);
 
       expect(result).toBe(`spawned(${cmd})`);
-      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: true});
+      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: true, sapVersion: 2});
     });
 
     it('should support passing configuration to `commandUtils.spawnAsPromised()`', async () => {
@@ -30,7 +30,8 @@ describe('testing-utils', () => {
       const result = await testCmd(cmd, {dryrun: true, suppressTbj: true});
 
       expect(result).toBe(`spawned(${cmd})`);
-      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {dryrun: true, returnOutput: true, suppressTbj: true});
+      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(
+          cmd, {dryrun: true, returnOutput: true, sapVersion: 2, suppressTbj: true});
     });
 
     it('should support overwriting `returnOutput`', async () => {
@@ -38,7 +39,15 @@ describe('testing-utils', () => {
       const result = await testCmd(cmd, {returnOutput: 42});
 
       expect(result).toBe(`spawned(${cmd})`);
-      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: 42});
+      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: 42, sapVersion: 2});
+    });
+
+    it('should support overwriting `sapVersion`', async () => {
+      const cmd = 'foo --bar | baz && qux';
+      const result = await testCmd(cmd, {sapVersion: 1});
+
+      expect(result).toBe(`spawned(${cmd})`);
+      expect(cuSpawnAsPromisedSpy).toHaveBeenCalledWith(cmd, {returnOutput: true, sapVersion: 1});
     });
 
     it('should reject if `commandUtils.spawnAsPromised()` errors', async () => {
