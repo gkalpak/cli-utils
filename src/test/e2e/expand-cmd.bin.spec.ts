@@ -1,6 +1,5 @@
 import {join} from 'node:path';
-
-import {gray} from 'picocolors';
+import {stripVTControlCharacters} from 'node:util';
 
 import {testingUtils} from '../../lib/testing-utils';
 import {IS_WINDOWS, reversePromise, ROOT_DIR} from '../test-utils';
@@ -73,13 +72,12 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
   it('should support `--gkcu-` arguments (sapVersion: 1)', async () => {
     // debug
     let result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug');
-    expect(result).toBe([
-      gray('[debug] Input command: \'echo baz\''),
-      gray('[debug] Expanded command: \'echo baz\''),
-      gray('[debug]   Running 1/1: \'echo\', \'baz\''),
-      gray('[debug]     (sapVersion: 1, stdio: [object Object], pipe, inherit)'),
-      'echo foo bar baz',
-    ].join('\n'));
+    expect(stripVTControlCharacters(result)).toBe(
+        '[debug] Input command: \'echo baz\'\n' +
+        '[debug] Expanded command: \'echo baz\'\n' +
+        '[debug]   Running 1/1: \'echo\', \'baz\'\n' +
+        '[debug]     (sapVersion: 1, stdio: [object Object], pipe, inherit)\n' +
+        'echo foo bar baz');
 
     // dryrun
     result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-dryrun foo');
@@ -100,13 +98,12 @@ describe('bin/expand-cmd', testingUtils.withJasmineTimeout(30000, () => {
   it('should support `--gkcu-` arguments (sapVersion: 2)', async () => {
     // debug
     let result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" foo --gkcu-debug --gkcu-sapVersion=2');
-    expect(result).toBe([
-      gray('[debug] Input command: \'echo baz\''),
-      gray('[debug] Expanded command: \'echo baz\''),
-      gray('[debug]   Running 1/1: \'echo baz\', \'\''),
-      gray('[debug]     (sapVersion: 2, stdio: [object Object], pipe, inherit)'),
-      'echo foo bar baz',
-    ].join('\n'));
+    expect(stripVTControlCharacters(result)).toBe(
+        '[debug] Input command: \'echo baz\'\n' +
+        '[debug] Expanded command: \'echo baz\'\n' +
+        '[debug]   Running 1/1: \'echo baz\', \'\'\n' +
+        '[debug]     (sapVersion: 2, stdio: [object Object], pipe, inherit)\n' +
+        'echo foo bar baz');
 
     // dryrun
     result = await expandCmd('"echo $1 \\${2:bar} ${3:::echo baz}" --gkcu-sapVersion=2 --gkcu-dryrun foo');
