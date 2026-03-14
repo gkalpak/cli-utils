@@ -1,5 +1,6 @@
 import {spawn, SpawnOptions} from 'node:child_process';
 import {PassThrough, Readable} from 'node:stream';
+import {stripVTControlCharacters} from 'node:util';
 
 import {internalUtils} from './internal-utils';
 import {processUtils} from './process-utils';
@@ -284,6 +285,12 @@ export class CommandUtils {
         const executable = cmdSpec.executable;
         const args = cmdSpec.args;
         const options: SpawnOptions = {
+          env: (!isLast || !returnOutputSubset) ?
+            undefined :
+            {
+              FORCE_COLOR: '3',
+              ...process.env,
+            },
           shell: true,
           stdio: [
             prevStdout,
@@ -340,7 +347,8 @@ export class CommandUtils {
   }
 
   private getLastLines(input: string, lineCount: number) {
-    return input.split('\n').slice(-lineCount).join('\n').trim();
+    const lastLines = input.split('\n').slice(-lineCount).join('\n');
+    return stripVTControlCharacters(lastLines).trim();
   }
 
   private insertAfter(items: string[], newItem: string, afterItem: string): void {

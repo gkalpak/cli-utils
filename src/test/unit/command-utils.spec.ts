@@ -478,7 +478,7 @@ describe('runner', () => {
 
     beforeEach(() => {
       let mockProcessIdx = -1;
-      mockProcesses = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(() => createMockProcess(jasmine));
+      mockProcesses = new Array(12).fill(null).map(() => createMockProcess(jasmine));
 
       cpSpawnSpy = spyOn(childProcess, 'spawn').and.callFake(() => {
         const proc = mockProcesses[++mockProcessIdx];
@@ -616,6 +616,46 @@ describe('runner', () => {
 
           expect(resolved).toHaveBeenCalledWith('baz  \n    qux');
         });
+
+        it('should not strip control characters from resolved value when `returnOutput: true`', async () => {
+          spyOn(process.stdout, 'write');
+          const resolved = jasmine.createSpy('resolved');
+
+          spawnAsPromised(rawCmd, {returnOutput: true}).then(resolved);
+
+          expect(mockProcesses[0]!.stdout.pipe).toHaveBeenCalledTimes(1);
+
+          const dataCapturingStream: Writable = (mockProcesses[0]!.stdout.pipe as jasmine.Spy).calls.argsFor(0)[0];
+          dataCapturingStream.emit('data', Buffer.from(`  ${gray('foo')}  `));
+          dataCapturingStream.emit('data', Buffer.from(`  \n  bar  ${gray('\n')}  `));
+          dataCapturingStream.emit('data', Buffer.from(`  ${gray('b')}az  \n  `));
+          dataCapturingStream.emit('data', Buffer.from(`  qu${gray('x')}  \n  `));
+          mockProcesses[0]!.emit('exit', 0);
+          await tickAsPromised();
+
+          expect(resolved).not.toHaveBeenCalledWith('  foo    \n  bar  \n    baz  \n    qux  \n  ');
+          expect(resolved).toHaveBeenCalledWith(
+              `  ${gray('foo')}    \n  bar  ${gray('\n')}    ${gray('b')}az  \n    qu${gray('x')}  \n  `);
+        });
+
+        it('should strip control characters from resolved value when `returnOutput: <number>`', async () => {
+          spyOn(process.stdout, 'write');
+          const resolved = jasmine.createSpy('resolved');
+
+          spawnAsPromised(rawCmd, {returnOutput: 2}).then(resolved);
+
+          expect(mockProcesses[0]!.stdout.pipe).toHaveBeenCalledTimes(1);
+
+          const dataCapturingStream: Writable = (mockProcesses[0]!.stdout.pipe as jasmine.Spy).calls.argsFor(0)[0];
+          dataCapturingStream.emit('data', Buffer.from(`  ${gray('foo')}  `));
+          dataCapturingStream.emit('data', Buffer.from(`  \n  bar  ${gray('\n')}  `));
+          dataCapturingStream.emit('data', Buffer.from(`  ${gray('   ')}  ${gray('b')}az  \n  `));
+          dataCapturingStream.emit('data', Buffer.from(`  qu${gray('x')}  \n  `));
+          mockProcesses[0]!.emit('exit', 0);
+          await tickAsPromised();
+
+          expect(resolved).toHaveBeenCalledWith('baz  \n    qux');
+        });
       });
     }));
 
@@ -664,6 +704,98 @@ describe('runner', () => {
         expect(cpSpawnSpy.calls.argsFor(1)).toEqual(['bar', ['"baz"'], anyObj]);
         expect(cpSpawnSpy.calls.argsFor(2)).toEqual(['"baz"', ['qux'], anyObj]);
         expect(cpSpawnSpy.calls.argsFor(3)).toEqual(['qux', ['"q u u x"'], anyObj]);
+      });
+
+      it('should use appropriate values for `env` (single command)', async () => {
+        // Without `returnOutput`.
+        await spawnAsPromised(rawCmd, config);
+        await spawnAsPromised(rawCmd, {...config, returnOutput: false});
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(2);
+        expect(cpSpawnSpy.calls.argsFor(0)[2].env).toBe(undefined);
+        expect(cpSpawnSpy.calls.argsFor(1)[2].env).toBe(undefined);
+
+        cpSpawnSpy.calls.reset();
+
+        // With `returnOutput: true`.
+        await spawnAsPromised(rawCmd, {...config, returnOutput: true});
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(1);
+        expect(cpSpawnSpy.calls.argsFor(0)[2].env).toBe(undefined);
+
+        cpSpawnSpy.calls.reset();
+
+        // With `returnOutput: <number>`.
+        await spawnAsPromised(rawCmd, {...config, returnOutput: 42});
+        await spawnAsPromised(rawCmd, {...config, returnOutput: Infinity});
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(2);
+        expect(cpSpawnSpy.calls.argsFor(0)[2].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
+        expect(cpSpawnSpy.calls.argsFor(1)[2].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
+
+        cpSpawnSpy.calls.reset();
+
+        // With `returnOutput: <number>` and existing `FORCE_COLOR`.
+        const originalEnv = process.env;
+        try {
+          process.env = {FORCE_COLOR: '1', OTHER_VAR: 'sure'};
+          await spawnAsPromised(rawCmd, {...config, returnOutput: 1337});
+
+          expect(cpSpawnSpy).toHaveBeenCalledTimes(1);
+          expect(cpSpawnSpy.calls.argsFor(0)[2].env).toEqual({FORCE_COLOR: '1', OTHER_VAR: 'sure'});
+        } finally {
+          process.env = originalEnv;
+        }
+      });
+
+      it('should use appropriate values for `env` (piped commands)', async () => {
+        const pipedCmd = 'foo | bar';
+
+        // Without `returnOutput`.
+        await spawnAsPromised(pipedCmd, config);
+        await spawnAsPromised(pipedCmd, {...config, returnOutput: false});
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(4);
+        expect(cpSpawnSpy.calls.argsFor(0)[1].env).toBe(undefined);
+        expect(cpSpawnSpy.calls.argsFor(1)[1].env).toBe(undefined);
+        expect(cpSpawnSpy.calls.argsFor(2)[1].env).toBe(undefined);
+        expect(cpSpawnSpy.calls.argsFor(3)[1].env).toBe(undefined);
+
+        cpSpawnSpy.calls.reset();
+
+        // With `returnOutput: true`.
+        await spawnAsPromised(pipedCmd, {...config, returnOutput: true});
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(2);
+        expect(cpSpawnSpy.calls.argsFor(0)[1].env).toBe(undefined);
+        expect(cpSpawnSpy.calls.argsFor(1)[1].env).toBe(undefined);
+
+        cpSpawnSpy.calls.reset();
+
+        // With `returnOutput: <number>`.
+        await spawnAsPromised(pipedCmd, {...config, returnOutput: 42});
+        await spawnAsPromised(pipedCmd, {...config, returnOutput: Infinity});
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(4);
+        expect(cpSpawnSpy.calls.argsFor(0)[1].env).toBe(undefined);
+        expect(cpSpawnSpy.calls.argsFor(1)[1].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
+        expect(cpSpawnSpy.calls.argsFor(2)[1].env).toBe(undefined);
+        expect(cpSpawnSpy.calls.argsFor(3)[1].env).toEqual(jasmine.objectContaining({FORCE_COLOR: '3'}));
+
+        cpSpawnSpy.calls.reset();
+
+        // With `returnOutput: <number>` and existing `FORCE_COLOR`.
+        const originalEnv = process.env;
+        try {
+          process.env = {FORCE_COLOR: '1', OTHER_VAR: 'sure'};
+          await spawnAsPromised(pipedCmd, {...config, returnOutput: 1337});
+
+          expect(cpSpawnSpy).toHaveBeenCalledTimes(2);
+          expect(cpSpawnSpy.calls.argsFor(0)[1].env).toBe(undefined);
+          expect(cpSpawnSpy.calls.argsFor(1)[1].env).toEqual({FORCE_COLOR: '1', OTHER_VAR: 'sure'});
+        } finally {
+          process.env = originalEnv;
+        }
       });
 
       it('should use appropriate values for `stdio`', async () => {
