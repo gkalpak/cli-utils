@@ -1,4 +1,4 @@
-import {exec, ExecOptions, spawn, SpawnOptions} from 'node:child_process';
+import {spawn, SpawnOptions} from 'node:child_process';
 import {PassThrough, Readable} from 'node:stream';
 
 import {internalUtils} from './internal-utils';
@@ -283,8 +283,13 @@ export class CommandUtils {
 
         const executable = cmdSpec.executable;
         const args = cmdSpec.args;
-        const options: ExecOptions & SpawnOptions = {
-          stdio: [prevStdout, 'pipe', 'inherit'],
+        const options: SpawnOptions = {
+          shell: true,
+          stdio: [
+            prevStdout,
+            (isLast && !returnOutput) ? 'inherit' : 'pipe',
+            'inherit',
+          ],
         };
 
         if (debug) {
@@ -293,10 +298,11 @@ export class CommandUtils {
               `    (sapVersion: ${sapVersion}, stdio: ${(options.stdio as string[]).join(', ')})`);
         }
 
-        // TODO(gkalpak): Can we relax the condition for `exec()` and ignore `sapVersion`?
-        const proc = ((sapVersion === 2) && (args.length === 0)) ?
-          exec(executable, options) :
-          spawn(executable, args, {...options, shell: true});
+        // If there are not arguments, use the appropriate call signature to avoid a deprecation warning in combination
+        // with `shell: true`.
+        const proc = (args.length === 0) ?
+          spawn(executable, options) :
+          spawn(executable, args, options);
 
         proc.
           on('error', reject).
@@ -308,9 +314,7 @@ export class CommandUtils {
         return proc.stdout!;
       }, process.stdin);
 
-      if (!returnOutput) {
-        lastStdout!.pipe(process.stdout);
-      } else {
+      if (returnOutput) {
         const outputStream = new PassThrough();
         outputStream.on('data', d => data += d);
         lastStdout.pipe(outputStream);

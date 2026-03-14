@@ -470,7 +470,6 @@ describe('runner', () => {
     let anyObj: jasmine.AsymmetricMatcher<unknown>;
     let rawCmd: string;
     let config: IRunConfig;
-    let cpExecSpy: jasmine.Spy;
     let cpSpawnSpy: jasmine.Spy;
     let cancelCleanUpSpy: jasmine.Spy;
     let unsuppressTbjSpy: jasmine.Spy;
@@ -481,7 +480,7 @@ describe('runner', () => {
       let mockProcessIdx = -1;
       mockProcesses = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(() => createMockProcess(jasmine));
 
-      const fakeExecOrSpawn = () => {
+      cpSpawnSpy = spyOn(childProcess, 'spawn').and.callFake(() => {
         const proc = mockProcesses[++mockProcessIdx];
 
         if (!proc) {
@@ -490,11 +489,8 @@ describe('runner', () => {
           Promise.resolve().then(() => proc.emit('exit', 0));
         }
 
-        return proc;
-      };
-
-      cpExecSpy = spyOn(childProcess, 'exec').and.callFake(fakeExecOrSpawn as unknown as typeof childProcess.exec);
-      cpSpawnSpy = spyOn(childProcess, 'spawn').and.callFake(fakeExecOrSpawn as unknown as typeof childProcess.spawn);
+        return proc as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
 
       cancelCleanUpSpy = jasmine.createSpy('cancelCleanUp');
       unsuppressTbjSpy = spyOn(internalUtils, 'noop');
@@ -522,22 +518,16 @@ describe('runner', () => {
 
     it('should default to `sapVersion: 1`', async () => {
       await spawnAsPromised(rawCmd);
-      expect(cpExecSpy).not.toHaveBeenCalled();
       expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
 
       await spawnAsPromised(rawCmd, {suppressTbj: false});
-      expect(cpExecSpy).not.toHaveBeenCalled();
       expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
 
       await spawnAsPromised(rawCmd, {sapVersion: 1});
-      expect(cpExecSpy).not.toHaveBeenCalled();
       expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
 
-      cpSpawnSpy.calls.reset();
-
       await spawnAsPromised(rawCmd, {sapVersion: 2});
-      expect(cpExecSpy).toHaveBeenCalledWith('foo --bar', anyObj);
-      expect(cpSpawnSpy).not.toHaveBeenCalled();
+      expect(cpSpawnSpy).toHaveBeenCalledWith('foo --bar', anyObj);
     });
 
     // With all `sapVersion`:
@@ -568,62 +558,6 @@ describe('runner', () => {
 
         await spawnAsPromised(rawCmd, {...config, suppressTbj: true});
         expect(suppressTbjSpy).toHaveBeenCalledWith(process);
-      });
-
-      it('should pipe the last process into `stdout` without `returnOutput` (single command)', async () => {
-        await spawnAsPromised(rawCmd);
-
-        expect(mockProcesses[0]!.stdout.pipe).toHaveBeenCalledOnceWith(process.stdout);
-        expect(mockProcesses[1]!.stdout.pipe).not.toHaveBeenCalled();
-
-        await spawnAsPromised(rawCmd, {returnOutput: false});
-
-        expect(mockProcesses[1]!.stdout.pipe).toHaveBeenCalledOnceWith(process.stdout);
-        expect(mockProcesses[2]!.stdout.pipe).not.toHaveBeenCalled();
-      });
-
-      it('should not pipe the last process into `stdout` with `returnOutput` (single command)', async () => {
-        await spawnAsPromised(rawCmd, {returnOutput: true});
-
-        expect(mockProcesses[0]!.stdout.pipe).not.toHaveBeenCalledWith(process.stdout);
-        expect(mockProcesses[1]!.stdout.pipe).not.toHaveBeenCalled();
-
-        await spawnAsPromised(rawCmd, {returnOutput: 42});
-
-        expect(mockProcesses[1]!.stdout.pipe).not.toHaveBeenCalledWith(process.stdout);
-        expect(mockProcesses[2]!.stdout.pipe).not.toHaveBeenCalled();
-      });
-
-      it('should pipe the last process into `stdout` without `returnOutput` (piped commands)', async () => {
-        const pipedCmd = 'foo --bar | "baz" "--qux"';
-
-        await spawnAsPromised(pipedCmd);
-
-        expect(mockProcesses[0]!.stdout.pipe).not.toHaveBeenCalled();
-        expect(mockProcesses[1]!.stdout.pipe).toHaveBeenCalledOnceWith(process.stdout);
-        expect(mockProcesses[2]!.stdout.pipe).not.toHaveBeenCalled();
-
-        await spawnAsPromised(pipedCmd, {returnOutput: false});
-
-        expect(mockProcesses[2]!.stdout.pipe).not.toHaveBeenCalled();
-        expect(mockProcesses[3]!.stdout.pipe).toHaveBeenCalledOnceWith(process.stdout);
-        expect(mockProcesses[4]!.stdout.pipe).not.toHaveBeenCalled();
-      });
-
-      it('should not pipe the last process into `stdout` with `returnOutput` (piped commands)', async () => {
-        const pipedCmd = 'foo --bar | "baz" "--qux"';
-
-        await spawnAsPromised(pipedCmd, {returnOutput: true});
-
-        expect(mockProcesses[0]!.stdout.pipe).not.toHaveBeenCalled();
-        expect(mockProcesses[1]!.stdout.pipe).not.toHaveBeenCalledWith(process.stdout);
-        expect(mockProcesses[2]!.stdout.pipe).not.toHaveBeenCalled();
-
-        await spawnAsPromised(pipedCmd, {returnOutput: 42});
-
-        expect(mockProcesses[2]!.stdout.pipe).not.toHaveBeenCalled();
-        expect(mockProcesses[3]!.stdout.pipe).not.toHaveBeenCalledWith(process.stdout);
-        expect(mockProcesses[4]!.stdout.pipe).not.toHaveBeenCalled();
       });
 
       describe('returned promise', () => {
@@ -691,8 +625,22 @@ describe('runner', () => {
 
       it('should spawn a process for the specified command', async () => {
         await spawnAsPromised(rawCmd, config);
-        expect(cpExecSpy).not.toHaveBeenCalled();
         expect(cpSpawnSpy).toHaveBeenCalledWith('foo', ['--bar'], anyObj);
+      });
+
+      it('should call `spawn()` without arguments, if there are no arguments', async () => {
+        await spawnAsPromised('foo', config);
+
+        expect(cpSpawnSpy).toHaveBeenCalledWith('foo', anyObj);
+
+        cpSpawnSpy.calls.reset();
+
+        await spawnAsPromised('foo | bar | baz', config);
+
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(3);
+        expect(cpSpawnSpy).toHaveBeenCalledWith('foo', anyObj);
+        expect(cpSpawnSpy).toHaveBeenCalledWith('bar', anyObj);
+        expect(cpSpawnSpy).toHaveBeenCalledWith('baz', anyObj);
       });
 
       it('should parse the specified command (respecting double-quoted values)', async () => {
@@ -721,7 +669,7 @@ describe('runner', () => {
       it('should use appropriate values for `stdio`', async () => {
         await spawnAsPromised(rawCmd, config);
 
-        const expectedStdio1 = [procStdinSpyObj, 'pipe', 'inherit'];
+        const expectedStdio1 = [procStdinSpyObj, 'inherit', 'inherit'];
         expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio1);
 
         cpSpawnSpy.calls.reset();
@@ -732,7 +680,7 @@ describe('runner', () => {
           [procStdinSpyObj, 'pipe', 'inherit'],
           [mockProcesses[1]!.stdout, 'pipe', 'inherit'],
           [mockProcesses[2]!.stdout, 'pipe', 'inherit'],
-          [mockProcesses[3]!.stdout, 'pipe', 'inherit'],
+          [mockProcesses[3]!.stdout, 'inherit', 'inherit'],
         ];
         expect(cpSpawnSpy.calls.argsFor(0)[2].stdio).toEqual(expectedStdio2[0]);
         expect(cpSpawnSpy.calls.argsFor(1)[2].stdio).toEqual(expectedStdio2[1]);
@@ -803,57 +751,51 @@ describe('runner', () => {
 
       it('should execute the specified command', async () => {
         await spawnAsPromised(rawCmd, config);
-        expect(cpExecSpy).toHaveBeenCalledWith('foo --bar', anyObj);
-        expect(cpSpawnSpy).not.toHaveBeenCalled();
+        expect(cpSpawnSpy).toHaveBeenCalledWith('foo --bar', anyObj);
       });
 
       it('should not parse the specified command', async () => {
         const unparsedCmd1 = 'foo1     "bar1" --baz1 --qux1="foo bar" "baz qux 1"';
         await spawnAsPromised(unparsedCmd1, config);
 
-        expect(cpExecSpy).toHaveBeenCalledWith(unparsedCmd1, anyObj);
+        expect(cpSpawnSpy).toHaveBeenCalledWith(unparsedCmd1, anyObj);
 
         const unparsedCmd2 = '"foo2"     "bar2" --baz2 --qux2="foo bar" "baz qux 2"';
         await spawnAsPromised(unparsedCmd2, config);
 
-        expect(cpExecSpy).toHaveBeenCalledWith(unparsedCmd2, anyObj);
+        expect(cpSpawnSpy).toHaveBeenCalledWith(unparsedCmd2, anyObj);
       });
 
       it('should not handle command "piping" speciall (and not spawn multiple processes)', async () => {
         const pipedCmd = 'foo bar | bar "baz" | "baz" qux | qux "q u u x"';
         await spawnAsPromised(pipedCmd, config);
 
-        expect(cpExecSpy).toHaveBeenCalledTimes(1);
-        expect(cpExecSpy.calls.argsFor(0)).toEqual([pipedCmd, anyObj]);
-        expect(cpSpawnSpy).not.toHaveBeenCalled();
-
-        expect(mockProcesses[0]!.stdout.pipe).toHaveBeenCalledOnceWith(process.stdout);
-        expect(mockProcesses[1]!.stdout.pipe).not.toHaveBeenCalled();
-        expect(mockProcesses[2]!.stdout.pipe).not.toHaveBeenCalled();
+        expect(cpSpawnSpy).toHaveBeenCalledTimes(1);
+        expect(cpSpawnSpy.calls.argsFor(0)).toEqual([pipedCmd, anyObj]);
       });
 
       it('should use appropriate values for `stdio`', async () => {
         // In default mode.
         await spawnAsPromised(rawCmd, config);
-        const expectedStdio1 = [procStdinSpyObj, 'pipe', 'inherit'];
+        const expectedStdio1 = [procStdinSpyObj, 'inherit', 'inherit'];
 
-        expect(cpExecSpy.calls.argsFor(0)[1].stdio).toEqual(expectedStdio1);
+        expect(cpSpawnSpy.calls.argsFor(0)[1].stdio).toEqual(expectedStdio1);
 
         await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', config);
-        const expectedStdio2 = [procStdinSpyObj, 'pipe', 'inherit'];
+        const expectedStdio2 = [procStdinSpyObj, 'inherit', 'inherit'];
 
-        expect(cpExecSpy.calls.argsFor(1)[1].stdio).toEqual(expectedStdio2);
+        expect(cpSpawnSpy.calls.argsFor(1)[1].stdio).toEqual(expectedStdio2);
 
         // With `returnOutput: true`.
         await spawnAsPromised(rawCmd, {...config, returnOutput: true});
         const expectedStdio3 = [procStdinSpyObj, 'pipe', 'inherit'];
 
-        expect(cpExecSpy.calls.argsFor(2)[1].stdio).toEqual(expectedStdio3);
+        expect(cpSpawnSpy.calls.argsFor(2)[1].stdio).toEqual(expectedStdio3);
 
         await spawnAsPromised('foo bar | bar "baz" | "baz" qux | qux "q u u x"', {...config, returnOutput: true});
         const expectedStdio4 = [procStdinSpyObj, 'pipe', 'inherit'];
 
-        expect(cpExecSpy.calls.argsFor(3)[1].stdio).toEqual(expectedStdio4);
+        expect(cpSpawnSpy.calls.argsFor(3)[1].stdio).toEqual(expectedStdio4);
       });
     });
   });

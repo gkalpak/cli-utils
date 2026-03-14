@@ -108,7 +108,7 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
       gray('[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\''),
       gray('[debug] Expanded command: \'echo foo bar baz\''),
       gray('[debug]   Running 1/1: \'echo\', \'foo, bar, baz\''),
-      gray('[debug]     (sapVersion: 1, stdio: [object Object], pipe, inherit)'),
+      gray('[debug]     (sapVersion: 1, stdio: [object Object], inherit, inherit)'),
       'foo bar baz',
       gray('[debug]   Reseting the output and cursor styles.'),
     ].join('\n'));
@@ -147,7 +147,7 @@ describe('bin/run', testingUtils.withJasmineTimeout(30000, () => {
       gray('[debug] Input command: \'echo $1 ${2:bar} ${3:::echo baz}\''),
       gray('[debug] Expanded command: \'echo foo bar baz\''),
       gray('[debug]   Running 1/1: \'echo foo bar baz\', \'\''),
-      gray('[debug]     (sapVersion: 2, stdio: [object Object], pipe, inherit)'),
+      gray('[debug]     (sapVersion: 2, stdio: [object Object], inherit, inherit)'),
       'foo bar baz',
       gray('[debug]   Reseting the output and cursor styles.'),
     ].join('\n'));
