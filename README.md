@@ -120,6 +120,7 @@ The following test-types/modes are available:
 Things I want to (but won't necessarily) do:
 
 - Add more unit tests for `commandUtils.spawnAsPromised()`.
+- Switch the default value of `sapVersion` to `2`.
 
 
 [aio-docs-utils]: https://marketplace.visualstudio.com/items?itemName=gkalpak.aio-docs-utils
